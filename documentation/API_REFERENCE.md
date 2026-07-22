@@ -89,7 +89,34 @@ Lista todas las categorías (paginadas, ordenadas por nombre ASC).
 ```json
 {
   "data": [
-    { "id": "uuid", "name": "Bebidas" }
+    { "id": "uuid", "name": "Bebidas", "productCount": 5 }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1
+}
+```
+
+---
+
+### `GET /:tenant/categories/admin` 🔒
+
+Lista **todas las categorías** (incluyendo el conteo total de productos, activos e inactivos).  
+Requiere JWT.
+
+> **Atención:** Esta ruta debe declararse **antes** de `GET /:tenant/categories/:id` para evitar conflictos.
+
+| Query | Tipo | Default |
+|-------|------|---------|
+| `page` | number (≥1) | 1 |
+| `limit` | number (1–100) | 10 |
+
+**Respuesta:**
+```json
+{
+  "data": [
+    { "id": "uuid", "name": "Bebidas", "productCount": 8 }
   ],
   "total": 1,
   "page": 1,
@@ -591,8 +618,10 @@ Hello World!
 
 #### `CategoryResponseDto`
 ```json
-{ "id": "uuid", "name": "Bebidas" }
+{ "id": "uuid", "name": "Bebidas", "productCount": 5 }
 ```
+
+> `productCount` depende del endpoint: público (`GET /:tenant/categories`) cuenta solo productos activos; admin (`GET /:tenant/categories/admin`) cuenta todos los productos (incluyendo inactivos).
 
 #### `StatsResponseDto`
 ```json

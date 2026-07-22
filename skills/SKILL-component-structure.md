@@ -74,27 +74,82 @@ export function BotonAgregarCarrito({ productId }: { productId: string }) {
 
 ## 4. Estado del carrito
 
-El carrito es estado del cliente (persiste mientras navega el sitio público). Usar un store simple (Zustand o Context, a definir según lo que ya tenga el proyecto) — nunca prop-drilling manual entre `[tenant]/page.tsx` → `carrito/page.tsx`.
+El carrito es estado del cliente (persiste mientras navega el sitio público). Se implementa con **Context de React** (decisión del proyecto — sin dependencias externas), con persistencia manual en `localStorage` para sobrevivir refresh de página.
 
 ```tsx
-// lib/store/cart.ts
+// lib/context/CartContext.tsx
 'use client';
-import { create } from 'zustand';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-interface CartState {
+interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface CartContextValue {
   items: CartItem[];
-  addItem: (productId: string) => void;
+  addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clear: () => void;
 }
 
-export const useCartStore = create<CartState>((set) => ({
-  items: [],
-  addItem: (productId) => set((state) => ({ /* ... */ })),
-  removeItem: (productId) => set((state) => ({ /* ... */ })),
-  clear: () => set({ items: [] }),
-}));
+const CartContext = createContext<CartContextValue | null>(null);
+const STORAGE_KEY = 'cart';
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  // Cargar desde localStorage al montar
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) setItems(JSON.parse(saved));
+  }, []);
+
+  // Persistir en cada cambio
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
+
+  const addItem: CartContextValue['addItem'] = (item) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.productId === item.productId);
+      if (existing) {
+        return prev.map((i) =>
+          i.productId === item.productId ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const removeItem = (productId: string) =>
+    setItems((prev) => prev.filter((i) => i.productId !== productId));
+
+  const updateQuantity = (productId: string, quantity: number) =>
+    setItems((prev) => prev.map((i) => (i.productId === productId ? { ...i, quantity } : i)));
+
+  const clear = () => setItems([]);
+
+  return (
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart debe usarse dentro de CartProvider');
+  return ctx;
+}
 ```
+
+**Dónde montar el Provider:** en `app/(public)/layout.tsx` (layout del route group, no del `[tenant]` — así el carrito envuelve todas las pantallas públicas por igual). Es un Client Component al ser el único punto con `"use client"` de más alto nivel; el resto de páginas debajo siguen pudiendo ser Server Components.
+
+**Nota de performance:** con Context, cualquier componente que llame `useCart()` se re-renderiza ante cualquier cambio del carrito (no hay selectors granulares). Para el tamaño de este proyecto no es un problema real — si en el futuro se vuelve necesario optimizar, ahí se evalúa migrar a una librería con selectors (Zustand u otra), pero no antes.
 
 ---
 
