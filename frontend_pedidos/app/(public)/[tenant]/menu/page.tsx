@@ -35,6 +35,7 @@ function ProductCard({
           productId={product.id}
           name={product.name}
           price={product.price}
+          imageUrl={product.imageUrl}
         />
       </div>
       <div className="w-32 h-32 shrink-0 bg-center bg-no-repeat bg-cover rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -78,10 +79,6 @@ export default async function MenuDigitalPage({
 
   return (
     <>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-      />
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -39,10 +39,6 @@ export default async function MenuPage({
 
   return (
     <>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-      />
       <main className="w-full">
         <section className="relative h-[751px] w-full flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0 z-0">

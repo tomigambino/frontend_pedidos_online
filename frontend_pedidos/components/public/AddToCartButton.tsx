@@ -6,14 +6,15 @@ interface AddToCartButtonProps {
   productId: string;
   name: string;
   price: number;
+  imageUrl: string | null;
 }
 
-export function AddToCartButton({ productId, name, price }: AddToCartButtonProps) {
+export function AddToCartButton({ productId, name, price, imageUrl }: AddToCartButtonProps) {
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
 
   const handleClick = () => {
-    addItem({ productId, name, price });
+    addItem({ productId, name, price, imageUrl });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
