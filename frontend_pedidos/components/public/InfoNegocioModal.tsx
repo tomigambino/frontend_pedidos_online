@@ -1,21 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { TenantConfigResponseDto } from '@/lib/api/tenants';
 
 const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-export function InfoNegocioModal({ tenant }: { tenant: TenantConfigResponseDto }) {
+export function InfoNegocioModal({
+  tenant,
+  trigger,
+}: {
+  tenant: TenantConfigResponseDto;
+  trigger?: ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="block -mt-8 mb-8 text-white/70 hover:text-white text-sm font-medium transition-colors underline underline-offset-4"
-      >
-        Ver info del negocio
-      </button>
+      {trigger ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex items-center justify-center w-full h-full active:scale-95 transition-transform"
+        >
+          {trigger}
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="block -mt-8 mb-8 text-white/70 hover:text-white text-sm font-medium transition-colors underline underline-offset-4"
+        >
+          Ver info del negocio
+        </button>
+      )}
 
       {isOpen && (
         <div

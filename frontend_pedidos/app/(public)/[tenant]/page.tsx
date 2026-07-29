@@ -91,12 +91,12 @@ export default async function MenuPage({
             <InfoNegocioModal tenant={tenant} />
             <a
               className="group relative inline-flex items-center justify-center px-10 py-4 font-semibold text-lg text-white bg-[var(--color-primary)] rounded-xl overflow-hidden shadow-lg transition-all duration-300 active:scale-95"
-              href="#menu"
+              href={`/${slug}/menu`}
             >
               <span className="relative z-10 flex items-center gap-2">
                 Ver Menú
-                <span className="material-symbols-outlined transition-transform group-hover:translate-y-1">
-                  keyboard_arrow_down
+                <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
+                  arrow_forward
                 </span>
               </span>
             </a>
@@ -107,9 +107,10 @@ export default async function MenuPage({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="grid grid-cols-2 gap-4 md:col-span-3">
               {categoriesRes.data.map((category) => (
-                <div
+                <a
                   key={category.id}
-                  className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col items-center text-center gap-3 cursor-pointer"
+                  href={`/${slug}/menu#section-${category.id}`}
+                  className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col items-center text-center gap-3 cursor-pointer hover:shadow-md hover:border-[var(--color-primary)] transition-shadow"
                 >
                   <div className="bg-[var(--color-primary)]/10 rounded-lg p-3">
                     <span className="material-symbols-outlined text-[var(--color-primary)]">
@@ -125,7 +126,7 @@ export default async function MenuPage({
                       {category.productCount === 1 ? 'opción' : 'opciones'}
                     </span>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           </div>
