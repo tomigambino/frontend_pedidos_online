@@ -2,8 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { TenantConfigResponseDto } from '@/lib/api/tenants';
-
-const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+import { buildWeekSchedule } from '@/lib/utils/schedule';
 
 export function InfoNegocioModal({
   tenant,
@@ -13,6 +12,8 @@ export function InfoNegocioModal({
   trigger?: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const weekSchedule = buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions);
+  const hasAnyOpenDay = weekSchedule.some((d) => d.isOpen);
 
   return (
     <>
@@ -64,12 +65,14 @@ export function InfoNegocioModal({
               <div>
                 <p className="text-sm text-[var(--color-muted)]">Horarios</p>
                 <div className="space-y-1 mt-1">
-                  {tenant.schedule.regular.map((s) => (
-                    <p key={s.id} className="text-[var(--color-foreground)] text-sm">
-                      {DAY_NAMES[s.dayOfWeek - 1]}: {s.openingTime}–{s.closingTime}
-                    </p>
-                  ))}
-                  {tenant.schedule.regular.length === 0 && (
+                  {weekSchedule
+                    .filter((d) => d.isOpen)
+                    .map((d) => (
+                      <p key={d.dayOfWeek} className="text-[var(--color-foreground)] text-sm">
+                        {d.label}: {d.slots.map((s) => `${s.openingTime}–${s.closingTime}`).join(', ')}
+                      </p>
+                    ))}
+                  {!hasAnyOpenDay && (
                     <p className="text-[var(--color-muted)] text-sm">No disponible</p>
                   )}
                 </div>

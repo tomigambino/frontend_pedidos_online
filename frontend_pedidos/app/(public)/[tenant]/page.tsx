@@ -1,6 +1,5 @@
 import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
-import { InfoNegocioModal } from '@/components/public/InfoNegocioModal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -84,7 +83,12 @@ export default async function MenuPage({
                 }
               />
             </div>
-            <InfoNegocioModal tenant={tenant} />
+            <a
+              href={`/${slug}/info`}
+              className="block -mt-8 mb-8 text-white/70 hover:text-white text-sm font-medium transition-colors underline underline-offset-4"
+            >
+              Ver info del negocio
+            </a>
             <a
               className="group relative inline-flex items-center justify-center px-10 py-4 font-semibold text-lg text-white bg-[var(--color-primary)] rounded-xl overflow-hidden shadow-lg transition-all duration-300 active:scale-95"
               href={`/${slug}/menu`}
