@@ -28,6 +28,10 @@ export interface TenantConfigResponseDto {
   isOpen: boolean;
   deliveryCostEnabled: boolean;
   deliveryCost: number | null;
+  cbu: string | null;
+  alias: string | null;
+  accountHolder: string | null;
+  bank: string | null;
   schedule: {
     regular: RegularScheduleDto[];
     exceptions: ExceptionDto[];

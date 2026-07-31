@@ -1,8 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
-import Link from 'next/link';
 
 function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
@@ -15,6 +15,7 @@ export function CarritoContent({
   slug: string;
   tenant: TenantConfigResponseDto;
 }) {
+  const router = useRouter();
   const { items, updateQuantity, removeItem } = useCart();
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -200,7 +201,10 @@ export function CarritoContent({
                 </span>
               </div>
             </div>
-            <button className="w-full mt-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-base font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all">
+            <button
+              onClick={() => router.push(`/${slug}/checkout`)}
+              className="w-full mt-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-base font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all"
+            >
               Continuar
             </button>
           </div>
