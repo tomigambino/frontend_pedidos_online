@@ -8,29 +8,7 @@ import {
   type OrderResponseDto,
   type OrderStatus,
 } from '@/lib/api/orders';
-
-type ActionVariant = 'primary' | 'success' | 'danger';
-
-const ACTIONS: Record<
-  OrderStatus,
-  { label: string; next: OrderStatus; variant: ActionVariant }[]
-> = {
-  PENDIENTE: [
-    { label: 'Confirmar', next: 'EN_PREPARACION', variant: 'primary' },
-    { label: 'Cancelar', next: 'CANCELADO', variant: 'danger' },
-  ],
-  EN_PREPARACION: [
-    { label: 'Listo', next: 'LISTO', variant: 'success' },
-    { label: 'Cancelar', next: 'CANCELADO', variant: 'danger' },
-  ],
-  LISTO: [
-    { label: 'Entregar', next: 'ENTREGADO', variant: 'success' },
-    { label: 'No retirado', next: 'NO_RETIRADO', variant: 'danger' },
-  ],
-  ENTREGADO: [],
-  CANCELADO: [],
-  NO_RETIRADO: [],
-};
+import { ACTIONS, VARIANT_CLASSES } from '@/lib/order-actions';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDIENTE: 'Pendiente',
@@ -48,12 +26,6 @@ const BADGE_CLASSES: Record<OrderStatus, string> = {
   ENTREGADO: 'bg-order-delivered/10 text-order-delivered',
   CANCELADO: 'bg-status-closed/10 text-status-closed',
   NO_RETIRADO: 'bg-status-closed/10 text-status-closed',
-};
-
-const VARIANT_CLASSES: Record<ActionVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-  success: 'bg-order-ready text-white hover:opacity-90',
-  danger: 'bg-slate-200 text-slate-600 hover:bg-slate-300',
 };
 
 function timeAgo(iso: string) {

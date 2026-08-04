@@ -109,6 +109,53 @@ export function getOrdersAdmin(
   );
 }
 
+export interface OrderFilters {
+  status?: OrderStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
+function buildQuery(filters: OrderFilters): string {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  });
+  return params.toString();
+}
+
+export function getOrdersFiltered(
+  slug: string,
+  filters: OrderFilters,
+  cookie?: string,
+) {
+  const qs = buildQuery(filters);
+  return apiClient<PaginatedResponse<OrderResponseDto>>(
+    `/${slug}/orders${qs ? `?${qs}` : ''}`,
+    {
+      headers: cookie ? { Cookie: cookie } : undefined,
+      cache: 'no-store',
+    },
+  );
+}
+
+export function getOrderCounts(
+  slug: string,
+  filters: Omit<OrderFilters, 'status' | 'page' | 'limit'>,
+  cookie?: string,
+) {
+  const qs = buildQuery(filters);
+  return apiClient<Record<OrderStatus, number>>(
+    `/${slug}/orders/admin/counts${qs ? `?${qs}` : ''}`,
+    {
+      headers: cookie ? { Cookie: cookie } : undefined,
+      cache: 'no-store',
+    },
+  );
+}
+
 export function updateOrderStatus(
   slug: string,
   orderId: string,
