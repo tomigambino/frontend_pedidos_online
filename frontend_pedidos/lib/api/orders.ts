@@ -1,7 +1,22 @@
 import { apiClient } from './client';
+import { PaginatedResponse } from './categories';
 
 export type PaymentMethod = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA_DEBITO';
 export type DeliveryType = 'RETIRO_LOCAL' | 'ENVIO_DOMICILIO';
+
+export type OrderStatus =
+  | 'PENDIENTE'
+  | 'EN_PREPARACION'
+  | 'LISTO'
+  | 'ENTREGADO'
+  | 'CANCELADO'
+  | 'NO_RETIRADO';
+
+export interface StatsResponseDto {
+  ordersToday: number;
+  revenueToday: number;
+  pendingOrders: number;
+}
 
 export interface CreateOrderItemDto {
   productId: string;
@@ -27,7 +42,7 @@ export interface CreateOrderDto {
 export interface OrderResponseDto {
   id: string;
   tenantId: string;
-  status: string;
+  status: OrderStatus;
   trackingUuid: string;
   cancellationReason: string | null;
   total: number;
@@ -65,6 +80,42 @@ export function getOrderByTracking(slug: string, trackingUuid: string) {
 export function createOrder(slug: string, dto: CreateOrderDto) {
   return apiClient<OrderResponseDto>(`/${slug}/orders`, {
     method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function getStats(slug: string, cookie?: string) {
+  return apiClient<StatsResponseDto>(`/${slug}/orders/admin/stats`, {
+    headers: cookie ? { Cookie: cookie } : undefined,
+    cache: 'no-store',
+  });
+}
+
+export function getOrdersAdmin(
+  slug: string,
+  params: { page?: number; limit?: number } = {},
+  cookie?: string,
+) {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) search.set('page', String(params.page));
+  if (params.limit !== undefined) search.set('limit', String(params.limit));
+  const qs = search.toString();
+  return apiClient<PaginatedResponse<OrderResponseDto>>(
+    `/${slug}/orders${qs ? `?${qs}` : ''}`,
+    {
+      headers: cookie ? { Cookie: cookie } : undefined,
+      cache: 'no-store',
+    },
+  );
+}
+
+export function updateOrderStatus(
+  slug: string,
+  orderId: string,
+  dto: { status: string; cancellationReason?: string },
+) {
+  return apiClient<OrderResponseDto>(`/${slug}/orders/${orderId}/status`, {
+    method: 'PATCH',
     body: JSON.stringify(dto),
   });
 }

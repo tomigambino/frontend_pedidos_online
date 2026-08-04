@@ -9,6 +9,10 @@
   --color-muted: #6c757d;
   --color-status-open: #2D6A4F;
   --color-status-closed: #6C757D;
+  --color-order-new: #F9AC19;
+  --color-order-preparing: #457B9D;
+  --color-order-ready: #2D6A4F;
+  --color-order-delivered: #ADB5BD;
 }
 
 @theme inline {
@@ -20,6 +24,10 @@
   --color-muted: var(--color-muted);
   --color-status-open: var(--color-status-open);
   --color-status-closed: var(--color-status-closed);
+  --color-order-new: var(--color-order-new);
+  --color-order-preparing: var(--color-order-preparing);
+  --color-order-ready: var(--color-order-ready);
+  --color-order-delivered: var(--color-order-delivered);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
