@@ -8,7 +8,7 @@ import { useAdminSession } from '@/components/admin/AdminSessionProvider';
 const links = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { href: '/admin/pedidos', label: 'Pedidos', icon: 'receipt_long' },
-  { href: '/admin/productos', label: 'Menú', icon: 'menu_book' },
+  { href: '/admin/menu', label: 'Menú', icon: 'menu_book' },
   { href: '/admin/configuracion', label: 'Configuración', icon: 'settings' },
 ];
 
