@@ -60,9 +60,68 @@ export interface UpdateTenantDto {
   deliveryCost?: number | null;
 }
 
-export function updateTenant(slug: string, dto: UpdateTenantDto) {
+export function updateTenant(slug: string, dto: Partial<UpdateTenantDto>) {
   return apiClient<TenantConfigResponseDto>(`/${slug}/admin/tenants`, {
     method: 'PATCH',
     body: JSON.stringify(dto),
   });
+}
+
+export function getTenantConfig(slug: string) {
+  return apiClient<TenantConfigResponseDto>(`/${slug}/availability`);
+}
+
+export interface CreateScheduleDto {
+  dayOfWeek: number;
+  openingTime: string;
+  closingTime: string;
+}
+
+export function getSchedule(slug: string) {
+  return apiClient<RegularScheduleDto[]>(`/${slug}/admin/schedule`);
+}
+
+export function createScheduleSlot(slug: string, dto: CreateScheduleDto) {
+  return apiClient<RegularScheduleDto>(`/${slug}/admin/schedule`, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function updateScheduleSlot(
+  slug: string,
+  id: string,
+  dto: Partial<CreateScheduleDto>,
+) {
+  return apiClient<RegularScheduleDto>(`/${slug}/admin/schedule/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function deleteScheduleSlot(slug: string, id: string) {
+  await apiClient<unknown>(`/${slug}/admin/schedule/${id}`, { method: 'DELETE' });
+}
+
+export interface CreateExceptionDto {
+  date: string;
+  isOpen: boolean;
+  openingTime?: string | null;
+  closingTime?: string | null;
+  reason?: string | null;
+}
+
+export function getExceptions(slug: string) {
+  return apiClient<ExceptionDto[]>(`/${slug}/admin/exceptions`);
+}
+
+export function createException(slug: string, dto: CreateExceptionDto) {
+  return apiClient<ExceptionDto>(`/${slug}/admin/exceptions`, {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function deleteException(slug: string, id: string) {
+  await apiClient<unknown>(`/${slug}/admin/exceptions/${id}`, { method: 'DELETE' });
 }
