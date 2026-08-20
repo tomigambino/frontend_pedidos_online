@@ -11,6 +11,20 @@ export interface AdminSession {
   tenantName: string;
 }
 
+export interface RegisterDto {
+  email: string;
+  password: string;
+  tenantName: string;
+  tenantSlug: string;
+}
+
+export function register(dto: RegisterDto) {
+  return apiClient<{ success: boolean }>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
 export function login(dto: LoginDto) {
   return apiClient<{ success: boolean }>('/auth/login', {
     method: 'POST',

@@ -9,11 +9,14 @@ import {
   type UpdateTenantDto,
 } from '@/lib/api/tenants';
 import { Toast, useToast } from '@/components/admin/Toast';
+import { IncompleteConfigBanner } from '@/components/admin/incomplete-config-banner';
 import { ScheduleSection } from './schedule-section';
 import { ExceptionsSection } from './exceptions-section';
 
-const inputClass =
-  'w-full px-4 py-3 bg-white border border-black/15 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground';
+const inputBase =
+  'w-full px-4 py-3 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground disabled:opacity-60 disabled:cursor-not-allowed';
+const inputClass = `${inputBase} border-black/15`;
+const inputMissingClass = `${inputBase} border-amber-400`;
 
 const labelClass = 'text-sm font-semibold text-muted';
 
@@ -37,6 +40,54 @@ const FORM_KEYS: (keyof UpdateTenantDto)[] = [
   'deliveryCost',
 ];
 
+const BANK_FIELDS = ['cbu', 'alias', 'accountHolder', 'bank'] as const;
+
+type SectionKey = 'general' | 'appearance' | 'banking' | 'delivery';
+
+const SECTION_FIELDS: Record<SectionKey, (keyof UpdateTenantDto)[]> = {
+  general: ['name', 'whatsapp', 'description', 'address'],
+  appearance: ['logo', 'banner', 'primaryColor', 'secondaryColor'],
+  banking: ['bank', 'cbu', 'alias', 'accountHolder'],
+  delivery: ['deliveryCostEnabled', 'deliveryCost'],
+};
+
+const SECTIONS = [
+  { id: 'general', label: 'Información General', icon: 'badge' },
+  { id: 'apariencia', label: 'Apariencia', icon: 'palette' },
+  { id: 'bancarios', label: 'Datos Bancarios', icon: 'account_balance' },
+  { id: 'delivery', label: 'Delivery', icon: 'delivery_dining' },
+  { id: 'horarios', label: 'Horarios de Atención', icon: 'schedule' },
+  { id: 'excepciones', label: 'Excepciones', icon: 'event_busy' },
+];
+
+type SectionProps = {
+  id: string;
+  form: Partial<UpdateTenantDto>;
+  updateField: UpdateField;
+  editing: boolean;
+  sectionKey: SectionKey;
+  editingSection: SectionKey | null;
+  onEdit: () => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  saving: boolean;
+};
+
+function getMissingSections(form: Partial<UpdateTenantDto>): string[] {
+  const sections: string[] = [];
+
+  const generalMissing = !form.description || !form.whatsapp || !form.address;
+  if (generalMissing) sections.push('Información General');
+
+  const appearanceMissing = !form.logo || !form.primaryColor || !form.secondaryColor;
+  if (appearanceMissing) sections.push('Apariencia');
+
+  const bankFilled = BANK_FIELDS.filter((k) => form[k]);
+  if (bankFilled.length < BANK_FIELDS.length) sections.push('Datos Bancarios');
+
+  return sections;
+}
+
 function toForm(data: TenantConfigResponseDto): Partial<UpdateTenantDto> {
   const form: Partial<UpdateTenantDto> = {};
   for (const key of FORM_KEYS) {
@@ -54,8 +105,9 @@ export function ConfigManager() {
 
   const [config, setConfig] = useState<TenantConfigResponseDto | null>(null);
   const [form, setForm] = useState<Partial<UpdateTenantDto>>({});
-  const [dirty, setDirty] = useState(false);
+  const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeSection, setActiveSection] = useState('general');
 
   useEffect(() => {
     let active = true;
@@ -76,26 +128,50 @@ export function ConfigManager() {
 
   function updateField<K extends keyof UpdateTenantDto>(key: K, value: UpdateTenantDto[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    setDirty(true);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
+    if (bankPartial) {
+      show('Completá los 4 datos bancarios o dejalos todos vacíos.', 'error');
+      return false;
+    }
     setSaving(true);
     try {
       await updateTenant(tenantSlug, form);
       show('Cambios guardados');
-      setDirty(false);
+      return true;
     } catch {
       show('No se pudo guardar', 'error');
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
-  function handleDiscard() {
+  async function handleConfirmSection() {
+    const ok = await handleSave();
+    if (ok) setEditingSection(null);
+  }
+
+  function handleCancelSection(sectionKey: SectionKey) {
     if (!config) return;
-    setForm(toForm(config));
-    setDirty(false);
+    const original = toForm(config);
+    setForm((prev) => {
+      const reverted = { ...prev };
+      for (const field of SECTION_FIELDS[sectionKey]) {
+        (reverted as Record<string, unknown>)[field] = (original as Record<string, unknown>)[field];
+      }
+      return reverted;
+    });
+    setEditingSection(null);
+  }
+
+  function handleSectionClick(id: string) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveSection(id);
+    }
   }
 
   async function handleToggleOpen(value: boolean) {
@@ -113,9 +189,14 @@ export function ConfigManager() {
     return <div className="text-muted py-12 text-center">Cargando configuración…</div>;
   }
 
+  const missingSections = getMissingSections(form);
+  const bankFilled = BANK_FIELDS.filter((k) => form[k]);
+  const bankPartial = bankFilled.length > 0 && bankFilled.length < BANK_FIELDS.length;
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 pb-24">
-      <div className="mb-8">
+      <IncompleteConfigBanner missingSections={missingSections} />
+      <div className="mb-8 mt-4">
         <h1 className="text-3xl font-extrabold text-foreground mb-2">
           Configuración del Negocio
         </h1>
@@ -124,69 +205,180 @@ export function ConfigManager() {
         </p>
       </div>
 
-      <div className="space-y-6">
-        <GeneralInfo form={form} updateField={updateField} />
-        <Appearance form={form} updateField={updateField} />
-        <BankingDetails form={form} updateField={updateField} />
-        <Delivery form={form} updateField={updateField} />
-        <ScheduleSection
-          slug={tenantSlug}
-          isOpen={form.isOpen ?? true}
-          onToggleOpen={handleToggleOpen}
-        />
-        <ExceptionsSection slug={tenantSlug} />
-      </div>
+      <div className="flex gap-8">
+        <aside className="hidden md:block w-56 shrink-0">
+          <nav className="sticky top-24 flex flex-col gap-1">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => handleSectionClick(s.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                  activeSection === s.id
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted hover:text-foreground hover:bg-black/5'
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg">{s.icon}</span>
+                {s.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-      {dirty && (
-        <div className="fixed bottom-14 md:bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-black/10 z-[60] py-4 px-4 md:px-12 flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-          <div className="hidden md:block">
-            <p className="text-sm font-medium text-muted">Tienes cambios sin guardar</p>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={handleDiscard}
-              disabled={saving}
-              className="flex-1 md:flex-none md:px-8 py-3 rounded-xl border-2 border-black/15 text-muted font-bold hover:bg-black/5 transition-all active:scale-95 disabled:opacity-40"
-            >
-              Descartar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 md:flex-none md:px-12 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg transition-all active:scale-95 disabled:opacity-40"
-            >
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </button>
-          </div>
+        <div className="flex-1 min-w-0 space-y-6">
+          <GeneralInfo
+            id="general"
+            form={form}
+            updateField={updateField}
+            editing={editingSection === 'general'}
+            sectionKey="general"
+            editingSection={editingSection}
+            onEdit={() => setEditingSection('general')}
+            onCancel={() => handleCancelSection('general')}
+            onConfirm={handleConfirmSection}
+            saving={saving}
+          />
+          <Appearance
+            id="apariencia"
+            form={form}
+            updateField={updateField}
+            editing={editingSection === 'appearance'}
+            sectionKey="appearance"
+            editingSection={editingSection}
+            onEdit={() => setEditingSection('appearance')}
+            onCancel={() => handleCancelSection('appearance')}
+            onConfirm={handleConfirmSection}
+            saving={saving}
+          />
+          <BankingDetails
+            id="bancarios"
+            form={form}
+            updateField={updateField}
+            editing={editingSection === 'banking'}
+            sectionKey="banking"
+            editingSection={editingSection}
+            onEdit={() => setEditingSection('banking')}
+            onCancel={() => handleCancelSection('banking')}
+            onConfirm={handleConfirmSection}
+            saving={saving}
+          />
+          <Delivery
+            id="delivery"
+            form={form}
+            updateField={updateField}
+            editing={editingSection === 'delivery'}
+            sectionKey="delivery"
+            editingSection={editingSection}
+            onEdit={() => setEditingSection('delivery')}
+            onCancel={() => handleCancelSection('delivery')}
+            onConfirm={handleConfirmSection}
+            saving={saving}
+          />
+          <section id="horarios" className="scroll-mt-24">
+            <ScheduleSection
+              slug={tenantSlug}
+              isOpen={form.isOpen ?? true}
+              onToggleOpen={handleToggleOpen}
+            />
+          </section>
+          <section id="excepciones" className="scroll-mt-24">
+            <ExceptionsSection slug={tenantSlug} />
+          </section>
         </div>
-      )}
+      </div>
 
       <Toast toast={toast} />
     </div>
   );
 }
 
-function SectionHeader({ icon, title }: { icon: string; title: string }) {
+function SectionHeader({
+  icon,
+  title,
+  sectionKey,
+  editingSection,
+  onEdit,
+}: {
+  icon: string;
+  title: string;
+  sectionKey: SectionKey;
+  editingSection: SectionKey | null;
+  onEdit: () => void;
+}) {
+  const isEditing = editingSection === sectionKey;
   return (
-    <div className="flex items-center gap-2 mb-5 border-b border-black/10 pb-4">
-      <span className="material-symbols-outlined text-primary">{icon}</span>
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
+    <div className="flex items-center justify-between mb-5 border-b border-black/10 pb-4">
+      <div className="flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary">{icon}</span>
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      </div>
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-sm font-semibold text-muted hover:text-primary flex items-center gap-1"
+        >
+          <span className="material-symbols-outlined text-lg">edit</span>
+          Editar
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SectionActions({
+  onCancel,
+  onConfirm,
+  saving,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  saving: boolean;
+}) {
+  return (
+    <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-black/5">
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={saving}
+        className="px-5 py-2 rounded-lg border border-black/15 text-muted font-semibold hover:bg-black/5 transition-all disabled:opacity-40"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={saving}
+        className="px-6 py-2 rounded-lg bg-primary text-primary-foreground font-semibold shadow-sm transition-all disabled:opacity-40"
+      >
+        {saving ? 'Guardando…' : 'Guardar cambios'}
+      </button>
     </div>
   );
 }
 
 function GeneralInfo({
+  id,
   form,
   updateField,
-}: {
-  form: Partial<UpdateTenantDto>;
-  updateField: UpdateField;
-}) {
+  editing,
+  sectionKey,
+  editingSection,
+  onEdit,
+  onCancel,
+  onConfirm,
+  saving,
+}: SectionProps) {
   return (
-    <section className="bg-white rounded-xl border border-black/5 shadow-sm p-6">
-      <SectionHeader icon="badge" title="Información General" />
+    <section id={id} className="bg-white rounded-xl border border-black/5 shadow-sm p-6 scroll-mt-24">
+      <SectionHeader
+        icon="badge"
+        title="Información General"
+        sectionKey={sectionKey}
+        editingSection={editingSection}
+        onEdit={onEdit}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Nombre del Negocio</label>
@@ -194,16 +386,18 @@ function GeneralInfo({
             className={inputClass}
             type="text"
             value={form.name ?? ''}
+            disabled={!editing}
             onChange={(e) => updateField('name', e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>WhatsApp de Pedidos</label>
           <input
-            className={inputClass}
+            className={form.whatsapp ? inputClass : inputMissingClass}
             type="tel"
             value={form.whatsapp ?? ''}
             placeholder="5491112345678"
+            disabled={!editing}
             onChange={(e) => updateField('whatsapp', e.target.value)}
           />
           <p className="text-xs text-muted">
@@ -213,9 +407,10 @@ function GeneralInfo({
         <div className="flex flex-col gap-2 md:col-span-2">
           <label className={labelClass}>Descripción Corta</label>
           <textarea
-            className={`${inputClass} min-h-[70px] resize-none`}
+            className={`${form.description ? inputClass : inputMissingClass} min-h-[70px] resize-none`}
             rows={2}
             value={form.description ?? ''}
+            disabled={!editing}
             onChange={(e) => updateField('description', e.target.value)}
           />
         </div>
@@ -223,10 +418,11 @@ function GeneralInfo({
           <label className={labelClass}>Dirección del Local</label>
           <div className="relative">
             <input
-              className={inputClass + ' pr-12'}
+              className={`${form.address ? inputClass : inputMissingClass} pr-12`}
               type="text"
               value={form.address ?? ''}
               placeholder="Ej: Av. Corrientes 1234, CABA"
+              disabled={!editing}
               onChange={(e) => updateField('address', e.target.value)}
             />
             <a
@@ -241,30 +437,46 @@ function GeneralInfo({
           </div>
         </div>
       </div>
+      {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>
   );
 }
 
 function Appearance({
+  id,
   form,
   updateField,
-}: {
-  form: Partial<UpdateTenantDto>;
-  updateField: UpdateField;
-}) {
+  editing,
+  sectionKey,
+  editingSection,
+  onEdit,
+  onCancel,
+  onConfirm,
+  saving,
+}: SectionProps) {
   return (
-    <section className="bg-white rounded-xl border border-black/5 shadow-sm p-6">
-      <SectionHeader icon="palette" title="Apariencia" />
+    <section id={id} className="bg-white rounded-xl border border-black/5 shadow-sm p-6 scroll-mt-24">
+      <SectionHeader
+        icon="palette"
+        title="Apariencia"
+        sectionKey={sectionKey}
+        editingSection={editingSection}
+        onEdit={onEdit}
+      />
       <div className="flex flex-wrap items-start gap-8">
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Logo del Negocio</label>
-          <div className="w-32 h-32 rounded-2xl bg-black/5 border-2 border-dashed border-black/15 flex items-center justify-center">
+          <div
+            className={`w-32 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${form.logo ? 'border-black/15' : 'border-amber-400'} flex items-center justify-center`}
+          >
             <span className="material-symbols-outlined text-muted text-3xl">storefront</span>
           </div>
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Banner del Negocio</label>
-          <div className="w-64 h-32 rounded-2xl bg-black/5 border-2 border-dashed border-black/15 flex flex-col items-center justify-center gap-1 text-muted">
+          <div
+            className={`w-64 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${form.banner ? 'border-black/15' : 'border-amber-400'} flex flex-col items-center justify-center gap-1 text-muted`}
+          >
             <span className="material-symbols-outlined text-2xl">image</span>
             <span className="text-xs font-medium">Subir Banner</span>
           </div>
@@ -276,14 +488,16 @@ function Appearance({
               <input
                 className="h-12 w-12 cursor-pointer rounded-full border-2 border-white shadow-md p-0 overflow-hidden appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full"
                 type="color"
-                value={/^#[0-9A-Fa-f]{6}$/.test(form.primaryColor ?? '') ? form.primaryColor : '#ea580c'}
+                value={/^#[0-9A-Fa-f]{6}$/.test(form.primaryColor ?? '') ? form.primaryColor ?? '#ea580c' : '#ea580c'}
+                disabled={!editing}
                 onChange={(e) => updateField('primaryColor', e.target.value)}
               />
               <input
-                className={`${inputClass} font-mono`}
+                className={`${form.primaryColor ? inputClass : inputMissingClass} font-mono`}
                 type="text"
                 value={form.primaryColor ?? ''}
                 placeholder="#EA580C"
+                disabled={!editing}
                 onChange={(e) => updateField('primaryColor', e.target.value)}
               />
             </div>
@@ -294,95 +508,133 @@ function Appearance({
               <input
                 className="h-12 w-12 cursor-pointer rounded-full border-2 border-white shadow-md p-0 overflow-hidden appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full"
                 type="color"
-                value={/^#[0-9A-Fa-f]{6}$/.test(form.secondaryColor ?? '') ? form.secondaryColor : '#1e293b'}
+                value={/^#[0-9A-Fa-f]{6}$/.test(form.secondaryColor ?? '') ? form.secondaryColor ?? '#1e293b' : '#1e293b'}
+                disabled={!editing}
                 onChange={(e) => updateField('secondaryColor', e.target.value)}
               />
               <input
-                className={`${inputClass} font-mono`}
+                className={`${form.secondaryColor ? inputClass : inputMissingClass} font-mono`}
                 type="text"
                 value={form.secondaryColor ?? ''}
                 placeholder="#1E293B"
+                disabled={!editing}
                 onChange={(e) => updateField('secondaryColor', e.target.value)}
               />
             </div>
           </div>
         </div>
       </div>
+      {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>
   );
 }
 
 function BankingDetails({
+  id,
   form,
   updateField,
-}: {
-  form: Partial<UpdateTenantDto>;
-  updateField: UpdateField;
-}) {
+  editing,
+  sectionKey,
+  editingSection,
+  onEdit,
+  onCancel,
+  onConfirm,
+  saving,
+}: SectionProps) {
+  const bankFilled = BANK_FIELDS.filter((k) => form[k]);
+  const bankPartial = bankFilled.length > 0 && bankFilled.length < BANK_FIELDS.length;
   return (
-    <section className="bg-white rounded-xl border border-black/5 shadow-sm p-6">
-      <SectionHeader icon="account_balance" title="Datos Bancarios" />
+    <section id={id} className="bg-white rounded-xl border border-black/5 shadow-sm p-6 scroll-mt-24">
+      <SectionHeader
+        icon="account_balance"
+        title="Datos Bancarios"
+        sectionKey={sectionKey}
+        editingSection={editingSection}
+        onEdit={onEdit}
+      />
       <p className="text-sm text-gray-500 mt-2 mb-5 flex items-start gap-1">
         <span className="material-symbols-outlined text-base">info</span>
         Estos datos se mostrarán al cliente cuando elija &quot;Transferencia&quot; como método de pago.
       </p>
+      {editing && bankPartial && (
+        <p className="text-xs text-red-600 mb-5 flex items-center gap-1">
+          <span className="material-symbols-outlined text-sm">error</span>
+          Completá los 4 datos bancarios o dejalos todos vacíos.
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Entidad / Banco</label>
           <input
-            className={inputClass}
+            className={form.bank ? inputClass : inputMissingClass}
             type="text"
             value={form.bank ?? ''}
             placeholder="Ej: Banco Nación"
+            disabled={!editing}
             onChange={(e) => updateField('bank', e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>CBU</label>
           <input
-            className={inputClass}
+            className={form.cbu ? inputClass : inputMissingClass}
             type="text"
             value={form.cbu ?? ''}
             placeholder="22 dígitos"
+            disabled={!editing}
             onChange={(e) => updateField('cbu', e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Alias</label>
           <input
-            className={inputClass}
+            className={form.alias ? inputClass : inputMissingClass}
             type="text"
             value={form.alias ?? ''}
             placeholder="Ej: mi.negocio.pago"
+            disabled={!editing}
             onChange={(e) => updateField('alias', e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Titular</label>
           <input
-            className={inputClass}
+            className={form.accountHolder ? inputClass : inputMissingClass}
             type="text"
             value={form.accountHolder ?? ''}
             placeholder="Nombre completo del titular"
+            disabled={!editing}
             onChange={(e) => updateField('accountHolder', e.target.value)}
           />
         </div>
       </div>
+      {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>
   );
 }
 
 function Delivery({
+  id,
   form,
   updateField,
-}: {
-  form: Partial<UpdateTenantDto>;
-  updateField: UpdateField;
-}) {
+  editing,
+  sectionKey,
+  editingSection,
+  onEdit,
+  onCancel,
+  onConfirm,
+  saving,
+}: SectionProps) {
   const enabled = form.deliveryCostEnabled ?? false;
   return (
-    <section className="bg-white rounded-xl border border-black/5 shadow-sm p-6">
-      <SectionHeader icon="delivery_dining" title="Delivery" />
+    <section id={id} className="bg-white rounded-xl border border-black/5 shadow-sm p-6 scroll-mt-24">
+      <SectionHeader
+        icon="delivery_dining"
+        title="Delivery"
+        sectionKey={sectionKey}
+        editingSection={editingSection}
+        onEdit={onEdit}
+      />
       <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-xl bg-black/5">
         <div className="flex items-center gap-4">
           <label className="relative inline-flex items-center cursor-pointer">
@@ -390,9 +642,10 @@ function Delivery({
               type="checkbox"
               className="sr-only peer"
               checked={enabled}
+              disabled={!editing}
               onChange={(e) => updateField('deliveryCostEnabled', e.target.checked)}
             />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white" />
+            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary peer-disabled:opacity-60 after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white" />
           </label>
           <span className="font-semibold text-foreground">Habilitar costo fijo de Delivery</span>
         </div>
@@ -406,6 +659,7 @@ function Delivery({
               step="0.01"
               value={form.deliveryCost === null || form.deliveryCost === undefined ? '' : form.deliveryCost}
               placeholder="$ 0.00"
+              disabled={!editing}
               onChange={(e) =>
                 updateField('deliveryCost', e.target.value === '' ? null : Number(e.target.value))
               }
@@ -413,6 +667,7 @@ function Delivery({
           </div>
         )}
       </div>
+      {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>
   );
 }
