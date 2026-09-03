@@ -60,10 +60,35 @@ export interface UpdateTenantDto {
   deliveryCost?: number | null;
 }
 
+const EXCLUDED_KEYS = new Set(['logo', 'banner']);
+
 export function updateTenant(slug: string, dto: Partial<UpdateTenantDto>) {
+  const fd = new FormData();
+  for (const [key, value] of Object.entries(dto)) {
+    if (value === undefined || value === null || EXCLUDED_KEYS.has(key)) continue;
+    fd.append(key, String(value));
+  }
   return apiClient<TenantConfigResponseDto>(`/${slug}/admin/tenants`, {
     method: 'PATCH',
-    body: JSON.stringify(dto),
+    body: fd,
+  });
+}
+
+export function updateTenantWithFiles(
+  slug: string,
+  dto: Partial<UpdateTenantDto>,
+  files: { logo: File | null; banner: File | null },
+) {
+  const fd = new FormData();
+  for (const [key, value] of Object.entries(dto)) {
+    if (value === undefined || value === null || EXCLUDED_KEYS.has(key)) continue;
+    fd.append(key, String(value));
+  }
+  if (files.logo) fd.append('logo', files.logo);
+  if (files.banner) fd.append('banner', files.banner);
+  return apiClient<TenantConfigResponseDto>(`/${slug}/admin/tenants`, {
+    method: 'PATCH',
+    body: fd,
   });
 }
 

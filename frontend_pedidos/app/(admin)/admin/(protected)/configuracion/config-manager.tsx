@@ -5,10 +5,10 @@ import { useAdminSession } from '@/components/admin/AdminSessionProvider';
 import {
   getTenantConfig,
   updateTenant,
+  updateTenantWithFiles,
   type TenantConfigResponseDto,
   type UpdateTenantDto,
 } from '@/lib/api/tenants';
-import { apiClient } from '@/lib/api/client';
 import { Toast, useToast } from '@/components/admin/Toast';
 import { IncompleteConfigBanner } from '@/components/admin/incomplete-config-banner';
 import { ScheduleSection } from './schedule-section';
@@ -200,18 +200,7 @@ export function ConfigManager() {
     try {
       let result: TenantConfigResponseDto;
       if (logoFile || bannerFile) {
-        const fd = new FormData();
-        for (const [key, value] of Object.entries(form)) {
-          if (value !== undefined && value !== null) {
-            fd.append(key, String(value));
-          }
-        }
-        if (logoFile) fd.append('logo', logoFile);
-        if (bannerFile) fd.append('banner', bannerFile);
-        result = await apiClient<TenantConfigResponseDto>(`/${tenantSlug}/admin/tenants`, {
-          method: 'PATCH',
-          body: fd,
-        });
+        result = await updateTenantWithFiles(tenantSlug, form, { logo: logoFile, banner: bannerFile } as { logo: File | null; banner: File | null });
       } else {
         result = await updateTenant(tenantSlug, form);
       }
