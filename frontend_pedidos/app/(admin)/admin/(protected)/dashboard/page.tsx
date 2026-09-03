@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { RecentOrdersTable } from '@/components/admin/RecentOrdersTable';
 import { StoreStatusToggle } from '@/components/admin/StoreStatusToggle';
 import { getMe, type AdminSession } from '@/lib/api/auth';
@@ -38,7 +39,54 @@ export default async function DashboardPage() {
 
       <MetricsGrid stats={stats} />
 
-      <RecentOrdersTable initialOrders={activeOrders} tenantSlug={session.tenantSlug} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RecentOrdersTable initialOrders={activeOrders} />
+        </div>
+        <QuickActions />
+      </div>
+    </div>
+  );
+}
+
+function QuickActions() {
+  const actions = [
+    {
+      href: '/admin/menu',
+      icon: 'add',
+      label: 'Agregar producto',
+      desc: 'Sumá una opción al menú',
+      color: 'bg-primary/10 text-primary',
+    },
+    {
+      href: '/admin/configuracion',
+      icon: 'storefront',
+      label: 'Editar mi negocio',
+      desc: 'Actualizá tus datos y horarios',
+      color: 'bg-secondary/10 text-secondary',
+    },
+  ];
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 className="text-xl font-bold text-foreground mb-5">Acciones Rápidas</h3>
+      <div className="flex flex-col gap-3">
+        {actions.map((a) => (
+          <Link
+            key={a.href}
+            href={a.href}
+            className="flex items-center gap-4 p-3 rounded-lg hover:bg-black/[0.02] transition-colors"
+          >
+            <div className={`${a.color} p-3 rounded-xl shrink-0`}>
+              <span className="material-symbols-outlined text-xl">{a.icon}</span>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground">{a.label}</p>
+              <p className="text-sm text-muted">{a.desc}</p>
+            </div>
+            <span className="material-symbols-outlined text-muted">arrow_forward</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
@@ -46,24 +94,9 @@ export default async function DashboardPage() {
 function MetricsGrid({ stats }: { stats: StatsResponseDto }) {
   const revenue = stats.revenueToday.toLocaleString('es-AR');
   const metrics = [
-    {
-      label: 'Pedidos hoy',
-      value: String(stats.ordersToday),
-      icon: 'shopping_basket',
-      iconClass: 'bg-primary/10 text-primary',
-    },
-    {
-      label: 'Facturación hoy',
-      value: `$${revenue}`,
-      icon: 'payments',
-      iconClass: 'bg-secondary/10 text-secondary',
-    },
-    {
-      label: 'Pedidos pendientes',
-      value: String(stats.pendingOrders),
-      icon: 'hourglass_empty',
-      iconClass: 'bg-primary/10 text-primary',
-    },
+    { label: 'Pedidos hoy', value: String(stats.ordersToday), icon: 'shopping_basket' },
+    { label: 'Facturación hoy', value: `$${revenue}`, icon: 'payments' },
+    { label: 'Pedidos pendientes', value: String(stats.pendingOrders), icon: 'hourglass_empty' },
   ];
 
   return (
@@ -71,15 +104,13 @@ function MetricsGrid({ stats }: { stats: StatsResponseDto }) {
       {metrics.map((metric) => (
         <div
           key={metric.label}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-5"
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
         >
-          <div className={`${metric.iconClass} p-4 rounded-xl`}>
-            <span className="material-symbols-outlined text-2xl">{metric.icon}</span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold tracking-wider text-muted">{metric.label}</p>
-            <h3 className="text-4xl font-extrabold text-foreground">{metric.value}</h3>
-          </div>
+          <span className="flex items-center gap-2 text-sm font-semibold tracking-wider text-muted mb-2">
+            {metric.label}
+            <span className="material-symbols-outlined text-base">{metric.icon}</span>
+          </span>
+          <h3 className="text-4xl font-extrabold text-foreground">{metric.value}</h3>
         </div>
       ))}
     </section>

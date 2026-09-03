@@ -89,13 +89,13 @@ export function OrderCard({
 
   return (
     <article
-      className={`rounded-xl p-6 flex flex-col transition-all duration-300 ${
+      className={`rounded-xl p-6 flex flex-col gap-6 transition-all duration-300 ${
         isTerminal
           ? 'bg-slate-50/50 opacity-75 border border-dashed border-gray-100'
           : 'bg-white border border-gray-100 shadow-sm group hover:shadow-lg hover:translate-y-[-4px]'
       }`}
     >
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start pb-5 border-b border-gray-50">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="text-2xl font-extrabold text-foreground">
@@ -107,7 +107,7 @@ export function OrderCard({
               {STATUS_LABELS[order.status]}
             </span>
           </div>
-          <p className="text-sm font-semibold tracking-wider text-muted flex items-center gap-1.5">
+          <p className="text-sm font-medium text-muted flex items-center gap-1.5">
             <span className="material-symbols-outlined text-lg">schedule</span>
             {isTerminal
               ? `Finalizado ${formatDateTime(order.updatedAt)}`
@@ -118,13 +118,13 @@ export function OrderCard({
           <p className={`text-xl font-semibold mb-1 ${isTerminal ? 'text-slate-400' : 'text-primary'}`}>
             {formatPrice(order.total)}
           </p>
-          <p className="text-[11px] font-bold text-muted uppercase tracking-tight">
+          <p className="text-[11px] font-bold text-muted uppercase">
             {DELIVERY_LABELS[order.deliveryType]}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 mb-8">
+      <div className="flex-1">
         <h3 className="text-lg font-semibold text-foreground mb-3">{order.customer.name}</h3>
         <ul className="space-y-2 text-sm text-muted">
           {order.items.map((item) => (
@@ -135,7 +135,7 @@ export function OrderCard({
           ))}
         </ul>
         {order.notes && (
-          <p className="mt-3 flex items-center gap-2 text-sm font-medium italic text-primary">
+          <p className="mt-4 flex items-center gap-2 text-sm font-medium italic text-primary bg-primary/5 px-3 py-2 rounded-lg">
             <span className="material-symbols-outlined text-base">warning</span>
             {order.notes}
           </p>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { createProduct, updateProduct, type ProductResponseDto } from '@/lib/api/products';
+import { useEffect, useRef, useState } from 'react';
+import { apiClient } from '@/lib/api/client';
+import type { ProductResponseDto } from '@/lib/api/products';
 import type { CategoryResponseDto } from '@/lib/api/categories';
 
 interface ProductFormModalProps {
@@ -20,31 +21,82 @@ export function ProductFormModal({
   onSaved,
 }: ProductFormModalProps) {
   const isEdit = !!product;
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(product?.name ?? '');
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? '');
   const [price, setPrice] = useState(product?.price?.toString() ?? '');
   const [description, setDescription] = useState(product?.description ?? '');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(product?.imageUrl ?? null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl !== product?.imageUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl, product?.imageUrl]);
+
   const priceValue = parseFloat(price);
   const canSave = name.trim().length > 0 && categoryId !== '' && !Number.isNaN(priceValue);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageError(null);
+
+    if (!file.type.startsWith('image/')) {
+      setImageError('El archivo debe ser una imagen');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('La imagen no puede superar 5 MB');
+      e.target.value = '';
+      return;
+    }
+
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleRemoveImage() {
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setImageFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
   async function handleSubmit() {
     if (!canSave || saving) return;
     setSaving(true);
     setError(null);
     try {
-      const dto = {
-        name: name.trim(),
-        categoryId,
-        price: priceValue,
-        ...(description.trim() && { description: description.trim() }),
-      };
+      const fd = new FormData();
+      fd.append('name', name.trim());
+      fd.append('categoryId', categoryId);
+      fd.append('price', String(priceValue));
+      if (description.trim()) fd.append('description', description.trim());
+      if (imageFile) fd.append('image', imageFile);
+
       if (isEdit && product) {
-        await updateProduct(slug, product.id, dto);
+        await apiClient<ProductResponseDto>(`/${slug}/products/${product.id}`, {
+          method: 'PATCH',
+          body: fd,
+        });
       } else {
-        await createProduct(slug, dto);
+        await apiClient<ProductResponseDto>(`/${slug}/products`, {
+          method: 'POST',
+          body: fd,
+        });
       }
       onSaved();
       onClose();
@@ -84,12 +136,45 @@ export function ProductFormModal({
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-muted">Foto del Producto</label>
-            <div className="w-full h-40 bg-black/5 rounded-lg border-2 border-dashed border-black/15 flex flex-col items-center justify-center opacity-70">
-              <span className="material-symbols-outlined text-4xl text-primary mb-2">
-                add_a_photo
-              </span>
-              <p className="text-sm text-muted">Subida de imágenes próximamente</p>
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            {previewUrl ? (
+              <div className="relative w-full h-40 rounded-lg overflow-hidden border border-black/15">
+                <img
+                  src={previewUrl}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                />
+                {!saving && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                    aria-label="Quitar imagen"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving}
+                className="w-full h-40 bg-black/5 rounded-lg border-2 border-dashed border-black/15 flex flex-col items-center justify-center hover:bg-black/10 hover:border-primary/40 transition-colors disabled:opacity-40"
+              >
+                <span className="material-symbols-outlined text-4xl text-primary mb-2">
+                  add_a_photo
+                </span>
+                <p className="text-sm text-muted">Subir imagen</p>
+              </button>
+            )}
+            {imageError && <p className="text-red-600 text-xs font-medium">{imageError}</p>}
           </div>
 
           <div className="space-y-2">

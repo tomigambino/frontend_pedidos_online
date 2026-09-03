@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAdminSession } from '@/components/admin/AdminSessionProvider';
 import {
   getTenantConfig,
@@ -8,6 +8,7 @@ import {
   type TenantConfigResponseDto,
   type UpdateTenantDto,
 } from '@/lib/api/tenants';
+import { apiClient } from '@/lib/api/client';
 import { Toast, useToast } from '@/components/admin/Toast';
 import { IncompleteConfigBanner } from '@/components/admin/incomplete-config-banner';
 import { ScheduleSection } from './schedule-section';
@@ -108,6 +109,13 @@ export function ConfigManager() {
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -126,8 +134,60 @@ export function ConfigManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantSlug]);
 
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    };
+  }, [logoPreview, bannerPreview]);
+
   function updateField<K extends keyof UpdateTenantDto>(key: K, value: UpdateTenantDto[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function validateImage(file: File): boolean {
+    setImageError(null);
+    if (!file.type.startsWith('image/')) {
+      setImageError('El archivo debe ser una imagen');
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('La imagen no puede superar 5 MB');
+      return false;
+    }
+    return true;
+  }
+
+  function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !validateImage(file)) { e.target.value = ''; return; }
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
+
+  function handleBannerFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !validateImage(file)) { e.target.value = ''; return; }
+    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  }
+
+  function handleRemoveLogo() {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoFile(null);
+    setLogoPreview(null);
+    updateField('logo', null);
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  }
+
+  function handleRemoveBanner() {
+    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(null);
+    setBannerPreview(null);
+    updateField('banner', null);
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
   }
 
   async function handleSave(): Promise<boolean> {
@@ -136,8 +196,29 @@ export function ConfigManager() {
       return false;
     }
     setSaving(true);
+    setImageError(null);
     try {
-      await updateTenant(tenantSlug, form);
+      let result: TenantConfigResponseDto;
+      if (logoFile || bannerFile) {
+        const fd = new FormData();
+        for (const [key, value] of Object.entries(form)) {
+          if (value !== undefined && value !== null) {
+            fd.append(key, String(value));
+          }
+        }
+        if (logoFile) fd.append('logo', logoFile);
+        if (bannerFile) fd.append('banner', bannerFile);
+        result = await apiClient<TenantConfigResponseDto>(`/${tenantSlug}/admin/tenants`, {
+          method: 'PATCH',
+          body: fd,
+        });
+      } else {
+        result = await updateTenant(tenantSlug, form);
+      }
+      setConfig(result);
+      setForm(toForm(result));
+      if (logoFile) { setLogoFile(null); setLogoPreview(null); }
+      if (bannerFile) { setBannerFile(null); setBannerPreview(null); }
       show('Cambios guardados');
       return true;
     } catch {
@@ -163,6 +244,17 @@ export function ConfigManager() {
       }
       return reverted;
     });
+    if (sectionKey === 'appearance') {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      setLogoFile(null);
+      setBannerFile(null);
+      setLogoPreview(null);
+      setBannerPreview(null);
+      setImageError(null);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      if (bannerInputRef.current) bannerInputRef.current.value = '';
+    }
     setEditingSection(null);
   }
 
@@ -250,6 +342,15 @@ export function ConfigManager() {
             onCancel={() => handleCancelSection('appearance')}
             onConfirm={handleConfirmSection}
             saving={saving}
+            logoPreview={logoPreview}
+            bannerPreview={bannerPreview}
+            logoInputRef={logoInputRef}
+            bannerInputRef={bannerInputRef}
+            onLogoFileChange={handleLogoFileChange}
+            onBannerFileChange={handleBannerFileChange}
+            onRemoveLogo={handleRemoveLogo}
+            onRemoveBanner={handleRemoveBanner}
+            imageError={imageError}
           />
           <BankingDetails
             id="bancarios"
@@ -453,7 +554,28 @@ function Appearance({
   onCancel,
   onConfirm,
   saving,
-}: SectionProps) {
+  logoPreview,
+  bannerPreview,
+  logoInputRef,
+  bannerInputRef,
+  onLogoFileChange,
+  onBannerFileChange,
+  onRemoveLogo,
+  onRemoveBanner,
+  imageError,
+}: SectionProps & {
+  logoPreview: string | null;
+  bannerPreview: string | null;
+  logoInputRef: React.RefObject<HTMLInputElement | null>;
+  bannerInputRef: React.RefObject<HTMLInputElement | null>;
+  onLogoFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBannerFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveLogo: () => void;
+  onRemoveBanner: () => void;
+  imageError: string | null;
+}) {
+  const effectiveLogo = logoPreview ?? form.logo;
+  const effectiveBanner = bannerPreview ?? form.banner;
   return (
     <section id={id} className="bg-white rounded-xl border border-black/5 shadow-sm p-6 scroll-mt-24">
       <SectionHeader
@@ -466,20 +588,60 @@ function Appearance({
       <div className="flex flex-wrap items-start gap-8">
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Logo del Negocio</label>
-          <div
-            className={`w-32 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${form.logo ? 'border-black/15' : 'border-amber-400'} flex items-center justify-center`}
-          >
-            <span className="material-symbols-outlined text-muted text-3xl">storefront</span>
-          </div>
+          <input ref={logoInputRef} type="file" accept="image/*" onChange={onLogoFileChange} className="hidden" />
+          {effectiveLogo ? (
+            <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-black/15">
+              <img src={effectiveLogo} alt="Logo" className="w-full h-full object-cover" />
+              {editing && (
+                <button
+                  type="button"
+                  onClick={onRemoveLogo}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                  aria-label="Quitar logo"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => editing && logoInputRef.current?.click()}
+              disabled={!editing}
+              className={`w-32 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${editing ? 'border-amber-400 hover:border-primary/40 hover:bg-black/10 cursor-pointer' : 'border-amber-400'} flex items-center justify-center transition-colors disabled:cursor-not-allowed`}
+            >
+              <span className="material-symbols-outlined text-muted text-3xl">storefront</span>
+            </button>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <label className={labelClass}>Banner del Negocio</label>
-          <div
-            className={`w-64 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${form.banner ? 'border-black/15' : 'border-amber-400'} flex flex-col items-center justify-center gap-1 text-muted`}
-          >
-            <span className="material-symbols-outlined text-2xl">image</span>
-            <span className="text-xs font-medium">Subir Banner</span>
-          </div>
+          <input ref={bannerInputRef} type="file" accept="image/*" onChange={onBannerFileChange} className="hidden" />
+          {effectiveBanner ? (
+            <div className="relative w-64 h-32 rounded-2xl overflow-hidden border border-black/15">
+              <img src={effectiveBanner} alt="Banner" className="w-full h-full object-cover" />
+              {editing && (
+                <button
+                  type="button"
+                  onClick={onRemoveBanner}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                  aria-label="Quitar banner"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => editing && bannerInputRef.current?.click()}
+              disabled={!editing}
+              className={`w-64 h-32 rounded-2xl bg-black/5 border-2 border-dashed ${editing ? 'border-amber-400 hover:border-primary/40 hover:bg-black/10 cursor-pointer' : 'border-amber-400'} flex flex-col items-center justify-center gap-1 text-muted transition-colors disabled:cursor-not-allowed`}
+            >
+              <span className="material-symbols-outlined text-2xl">image</span>
+              <span className="text-xs font-medium">Subir Banner</span>
+            </button>
+          )}
         </div>
         <div className="flex-1 space-y-6 min-w-[280px]">
           <div className="flex flex-col gap-2">
@@ -524,6 +686,7 @@ function Appearance({
           </div>
         </div>
       </div>
+      {imageError && <p className="text-red-600 text-xs font-medium mt-3">{imageError}</p>}
       {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>
   );

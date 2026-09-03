@@ -82,71 +82,68 @@ export function PedidosFiltersBar({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6 px-1">
-        <div className="flex items-center rounded-xl border border-primary bg-rose-50 text-primary shadow-sm">
-          <button
-            type="button"
-            onClick={() => setPickerOpen((open) => !open)}
-            className="flex items-center gap-2 px-4 py-2.5 font-semibold tracking-wider transition-transform active:scale-95"
-          >
-            <span className="material-symbols-outlined text-xl">calendar_today</span>
-            <span>{dateLabel ?? 'Filtrar por fecha'}</span>
-          </button>
-          {!isToday && (
-            <button
-              type="button"
-              aria-label="Volver a hoy"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPickerOpen(false);
-                resetToToday();
-              }}
-              className="flex items-center justify-center px-2 py-2.5 hover:bg-primary/10 transition-colors"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
-          )}
-        </div>
-
-        {!isAll && (
-          <button
-            type="button"
-            onClick={() => {
-              setPickerOpen(false);
-              showAll();
-            }}
-            className="text-muted hover:text-primary font-semibold text-sm px-2 py-1 transition-colors"
-          >
-            Ver todos los pedidos
-          </button>
-        )}
-
-        {pickerOpen && (
-          <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-muted uppercase tracking-wider">Desde</span>
-              <input
-                type="date"
-                value={dateFrom ?? ''}
-                onChange={(e) => setDateFrom(e.target.value || undefined)}
-                className="rounded-lg border border-gray-100 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-              />
-            </label>
-            <span className="text-muted">a</span>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-muted uppercase tracking-wider">Hasta</span>
-              <input
-                type="date"
-                value={dateTo ?? ''}
-                onChange={(e) => setDateTo(e.target.value || undefined)}
-                className="rounded-lg border border-gray-100 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-              />
-            </label>
-          </div>
-        )}
+      <div className="flex items-center gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => { setPickerOpen(false); resetToToday(); }}
+          className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
+            isToday
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+              : 'bg-white border border-gray-100 text-foreground hover:bg-rose-50'
+          }`}
+        >
+          Hoy
+        </button>
+        <button
+          type="button"
+          onClick={() => { setPickerOpen(false); showAll(); }}
+          className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
+            isAll
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+              : 'bg-white border border-gray-100 text-foreground hover:bg-gray-100'
+          }`}
+        >
+          Todos los pedidos
+        </button>
+        <button
+          type="button"
+          onClick={() => setPickerOpen((o) => !o)}
+          className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
+            !isToday && !isAll
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+              : 'bg-white border border-gray-100 text-foreground hover:bg-gray-50'
+          }`}
+        >
+          <span className="material-symbols-outlined text-lg">calendar_today</span>
+          {!isToday && !isAll ? dateLabel : 'Rango personalizado'}
+        </button>
       </div>
 
-      <nav className="flex overflow-x-auto gap-3 pb-4 mb-6">
+      {pickerOpen && (
+        <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm mb-6">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-muted uppercase tracking-wider">Desde</span>
+            <input
+              type="date"
+              value={dateFrom ?? ''}
+              onChange={(e) => setDateFrom(e.target.value || undefined)}
+              className="rounded-lg border border-gray-100 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+            />
+          </label>
+          <span className="text-muted">a</span>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-muted uppercase tracking-wider">Hasta</span>
+            <input
+              type="date"
+              value={dateTo ?? ''}
+              onChange={(e) => setDateTo(e.target.value || undefined)}
+              className="rounded-lg border border-gray-100 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+            />
+          </label>
+        </div>
+      )}
+
+      <nav className="flex gap-2 pb-4 mb-6">
         {TABS.map((tab) => {
           const active = status === tab.status;
           const count = tab.status ? counts[tab.status] ?? 0 : totalCount;
@@ -155,7 +152,7 @@ export function PedidosFiltersBar({
               key={tab.label}
               type="button"
               onClick={() => setStatus(tab.status)}
-              className={`whitespace-nowrap px-6 py-2.5 rounded-full font-semibold tracking-wider flex items-center gap-2 transition-all active:scale-95 ${
+              className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
                 active
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                   : `bg-white border border-gray-100 text-foreground ${tab.hoverClass}`
