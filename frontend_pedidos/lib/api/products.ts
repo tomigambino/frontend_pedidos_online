@@ -68,3 +68,9 @@ export function hideProduct(slug: string, id: string) {
     method: 'PATCH',
   });
 }
+
+export function deleteProductImage(slug: string, id: string) {
+  return apiClient<ProductResponseDto>(`/${slug}/products/${id}/image`, {
+    method: 'DELETE',
+  });
+}

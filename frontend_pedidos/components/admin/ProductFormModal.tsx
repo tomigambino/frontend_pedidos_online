@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
 import type { ProductResponseDto } from '@/lib/api/products';
+import { deleteProductImage } from '@/lib/api/products';
 import type { CategoryResponseDto } from '@/lib/api/categories';
 
 interface ProductFormModalProps {
@@ -30,6 +31,7 @@ export function ProductFormModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(product?.imageUrl ?? null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [markedForDeletion, setMarkedForDeletion] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,12 +69,15 @@ export function ProductFormModal({
   }
 
   function handleRemoveImage() {
-    if (previewUrl && previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(previewUrl);
+    if (imageFile) {
+      if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+      setImageFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
-    setImageFile(null);
     setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setMarkedForDeletion(true);
   }
 
   async function handleSubmit() {
@@ -80,6 +85,9 @@ export function ProductFormModal({
     setSaving(true);
     setError(null);
     try {
+      if (markedForDeletion && !imageFile && isEdit && product) {
+        await deleteProductImage(slug, product.id);
+      }
       const fd = new FormData();
       fd.append('name', name.trim());
       fd.append('categoryId', categoryId);

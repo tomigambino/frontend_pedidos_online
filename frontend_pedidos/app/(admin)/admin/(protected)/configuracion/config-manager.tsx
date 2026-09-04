@@ -6,6 +6,8 @@ import {
   getTenantConfig,
   updateTenant,
   updateTenantWithFiles,
+  deleteTenantLogo,
+  deleteTenantBanner,
   type TenantConfigResponseDto,
   type UpdateTenantDto,
 } from '@/lib/api/tenants';
@@ -114,6 +116,8 @@ export function ConfigManager() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [logoMarkedForDeletion, setLogoMarkedForDeletion] = useState(false);
+  const [bannerMarkedForDeletion, setBannerMarkedForDeletion] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,19 +179,29 @@ export function ConfigManager() {
   }
 
   function handleRemoveLogo() {
-    if (logoPreview) URL.revokeObjectURL(logoPreview);
-    setLogoFile(null);
+    if (logoFile) {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      setLogoFile(null);
+      setLogoPreview(null);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      return;
+    }
     setLogoPreview(null);
     updateField('logo', null);
-    if (logoInputRef.current) logoInputRef.current.value = '';
+    setLogoMarkedForDeletion(true);
   }
 
   function handleRemoveBanner() {
-    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
-    setBannerFile(null);
+    if (bannerFile) {
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      setBannerFile(null);
+      setBannerPreview(null);
+      if (bannerInputRef.current) bannerInputRef.current.value = '';
+      return;
+    }
     setBannerPreview(null);
     updateField('banner', null);
-    if (bannerInputRef.current) bannerInputRef.current.value = '';
+    setBannerMarkedForDeletion(true);
   }
 
   async function handleSave(): Promise<boolean> {
@@ -198,6 +212,9 @@ export function ConfigManager() {
     setSaving(true);
     setImageError(null);
     try {
+      if (logoMarkedForDeletion && !logoFile) await deleteTenantLogo(tenantSlug);
+      if (bannerMarkedForDeletion && !bannerFile) await deleteTenantBanner(tenantSlug);
+
       let result: TenantConfigResponseDto;
       if (logoFile || bannerFile) {
         result = await updateTenantWithFiles(tenantSlug, form, { logo: logoFile, banner: bannerFile } as { logo: File | null; banner: File | null });
@@ -208,6 +225,8 @@ export function ConfigManager() {
       setForm(toForm(result));
       if (logoFile) { setLogoFile(null); setLogoPreview(null); }
       if (bannerFile) { setBannerFile(null); setBannerPreview(null); }
+      setLogoMarkedForDeletion(false);
+      setBannerMarkedForDeletion(false);
       show('Cambios guardados');
       return true;
     } catch {
@@ -240,6 +259,8 @@ export function ConfigManager() {
       setBannerFile(null);
       setLogoPreview(null);
       setBannerPreview(null);
+      setLogoMarkedForDeletion(false);
+      setBannerMarkedForDeletion(false);
       setImageError(null);
       if (logoInputRef.current) logoInputRef.current.value = '';
       if (bannerInputRef.current) bannerInputRef.current.value = '';

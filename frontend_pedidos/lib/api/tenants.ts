@@ -150,3 +150,15 @@ export function createException(slug: string, dto: CreateExceptionDto) {
 export async function deleteException(slug: string, id: string) {
   await apiClient<unknown>(`/${slug}/admin/exceptions/${id}`, { method: 'DELETE' });
 }
+
+export function deleteTenantLogo(slug: string) {
+  return apiClient<TenantConfigResponseDto>(`/${slug}/admin/tenants/logo`, {
+    method: 'DELETE',
+  });
+}
+
+export function deleteTenantBanner(slug: string) {
+  return apiClient<TenantConfigResponseDto>(`/${slug}/admin/tenants/banner`, {
+    method: 'DELETE',
+  });
+}
