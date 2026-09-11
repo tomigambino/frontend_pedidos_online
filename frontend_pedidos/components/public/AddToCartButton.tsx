@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+
 import { useCart } from '@/lib/context/CartContext';
 
 interface AddToCartButtonProps {
@@ -10,33 +10,37 @@ interface AddToCartButtonProps {
 }
 
 export function AddToCartButton({ productId, name, price, imageUrl }: AddToCartButtonProps) {
-  const [added, setAdded] = useState(false);
-  const { addItem } = useCart();
+  const { items, addItem, updateQuantity, removeItem } = useCart();
+  const qty = items.find((i) => i.productId === productId)?.quantity ?? 0;
 
-  const handleClick = () => {
-    addItem({ productId, name, price, imageUrl });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
-
-  if (added) {
+  if (qty === 0) {
     return (
       <button
-        disabled
-        className="mt-3 flex min-w-[100px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-[var(--color-status-open)] text-white text-sm font-bold leading-normal w-fit gap-1.5"
+        onClick={() => addItem({ productId, name, price, imageUrl })}
+        className="mt-3 flex min-w-[100px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-sm font-bold leading-normal w-fit transition-transform active:scale-95"
       >
-        <span className="material-symbols-outlined text-sm">check</span>
-        <span className="truncate">Agregado</span>
+        <span className="truncate">+ Agregar</span>
       </button>
     );
   }
 
   return (
-    <button
-      onClick={handleClick}
-      className="mt-3 flex min-w-[100px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-sm font-bold leading-normal w-fit transition-transform active:scale-95"
-    >
-      <span className="truncate">+ Agregar</span>
-    </button>
+    <div className="mt-3 flex items-center gap-3 bg-gray-50 rounded-full px-2 py-1 w-fit">
+      <button
+        onClick={() => (qty === 1 ? removeItem(productId) : updateQuantity(productId, qty - 1))}
+        className="w-7 h-7 flex items-center justify-center rounded-full bg-white text-[var(--color-primary)] shadow-sm active:scale-90 transition-transform"
+      >
+        <span className="material-symbols-outlined text-sm">remove</span>
+      </button>
+      <span className="text-sm font-bold min-w-[1.25rem] text-center text-[var(--color-foreground)]">
+        {qty}
+      </span>
+      <button
+        onClick={() => updateQuantity(productId, qty + 1)}
+        className="w-7 h-7 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm active:scale-90 transition-transform"
+      >
+        <span className="material-symbols-outlined text-sm">add</span>
+      </button>
+    </div>
   );
 }

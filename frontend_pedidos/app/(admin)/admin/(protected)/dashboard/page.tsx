@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
       <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Panel de Control</h2>
+          <h2 className="text-2xl font-bold text-foreground">Resumen de hoy</h2>
           <p className="text-muted">Gestiona el flujo de tus pedidos en tiempo real.</p>
         </div>
         <StoreStatusToggle initialIsOpen={availability.isOpen} tenantSlug={session.tenantSlug} />
@@ -108,9 +108,14 @@ function MetricsGrid({ stats }: { stats: StatsResponseDto }) {
         >
           <span className="flex items-center gap-2 text-sm font-semibold tracking-wider text-muted mb-2">
             {metric.label}
-            <span className="material-symbols-outlined text-base">{metric.icon}</span>
+            <span className="material-symbols-outlined text-sm text-orange-500">{metric.icon}</span>
           </span>
-          <h3 className="text-4xl font-extrabold text-foreground">{metric.value}</h3>
+          <h3 className="text-4xl font-extrabold text-foreground">
+              {metric.value}
+            </h3>
+            {metric.label === 'Pedidos pendientes' && (
+              <p className="text-sm text-muted mt-1">Requiere atención</p>
+            )}
         </div>
       ))}
     </section>
