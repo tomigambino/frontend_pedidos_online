@@ -38,7 +38,7 @@ export default async function MenuPage({
 
   return (
     <>
-      <main className="w-full">
+      <main className={`w-full ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
         <section className="relative h-[751px] w-full flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0 z-0">
             {tenant.banner ? (

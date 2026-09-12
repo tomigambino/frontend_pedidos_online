@@ -680,7 +680,7 @@ function Appearance({
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Color Secundario de la Marca</label>
+            <label className={labelClass}>Color de Fondo</label>
             <div className="flex items-center gap-3">
               <input
                 className="h-12 w-12 cursor-pointer rounded-full border-2 border-white shadow-md p-0 overflow-hidden appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full"
@@ -698,6 +698,9 @@ function Appearance({
                 onChange={(e) => updateField('secondaryColor', e.target.value)}
               />
             </div>
+            <span className="text-xs font-medium text-muted">
+              Este color se aplica de forma suavizada como fondo de tu página
+            </span>
           </div>
         </div>
       </div>

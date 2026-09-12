@@ -24,7 +24,7 @@ export function CarritoContent({
 
   if (items.length === 0) {
     return (
-      <div className="relative flex min-h-screen w-full flex-col bg-white">
+      <div className={`relative flex min-h-screen w-full flex-col ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
         <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
@@ -90,7 +90,7 @@ export function CarritoContent({
 
   return (
     <>
-      <div className="relative flex min-h-screen w-full flex-col bg-white">
+      <div className={`relative flex min-h-screen w-full flex-col ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
         <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
