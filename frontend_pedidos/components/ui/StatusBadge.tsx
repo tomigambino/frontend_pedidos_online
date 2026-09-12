@@ -15,7 +15,13 @@ export function StatusBadge({
     >
       {isOpen && <span className="w-2 h-2 bg-white rounded-full animate-pulse" />}
       {isOpen ? 'ABIERTO' : 'CERRADO'}
-      {scheduleLabel ? ` • Hoy ${scheduleLabel}` : ' • Cerrado hoy'}
+      {isOpen
+        ? scheduleLabel
+          ? ` • Hoy ${scheduleLabel}`
+          : ''
+        : scheduleLabel
+          ? ` • Hoy ${scheduleLabel}`
+          : ' • Cerrado hoy'}
     </span>
   );
 }

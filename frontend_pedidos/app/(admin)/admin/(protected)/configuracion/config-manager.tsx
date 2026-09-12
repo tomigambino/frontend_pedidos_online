@@ -15,6 +15,7 @@ import { Toast, useToast } from '@/components/admin/Toast';
 import { IncompleteConfigBanner } from '@/components/admin/incomplete-config-banner';
 import { ScheduleSection } from './schedule-section';
 import { ExceptionsSection } from './exceptions-section';
+import { MenuLinkSection } from './menu-link-section';
 
 const inputBase =
   'w-full px-4 py-3 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground disabled:opacity-60 disabled:cursor-not-allowed';
@@ -61,6 +62,7 @@ const SECTIONS = [
   { id: 'delivery', label: 'Delivery', icon: 'delivery_dining' },
   { id: 'horarios', label: 'Horarios de Atención', icon: 'schedule' },
   { id: 'excepciones', label: 'Excepciones', icon: 'event_busy' },
+  { id: 'menu-link', label: 'Link del Menú', icon: 'link' },
 ];
 
 type SectionProps = {
@@ -395,6 +397,9 @@ export function ConfigManager() {
           </section>
           <section id="excepciones" className="scroll-mt-24">
             <ExceptionsSection slug={tenantSlug} />
+          </section>
+          <section id="menu-link" className="scroll-mt-24">
+            <MenuLinkSection />
           </section>
         </div>
       </div>
