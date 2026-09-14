@@ -30,9 +30,10 @@ export function CarritoContent({
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
               href={`/${slug}/menu`}
+              aria-label="Volver al menú"
               className="flex size-12 shrink-0 items-center justify-center active:scale-95 transition-transform"
             >
-              <span className="material-symbols-outlined text-[var(--color-foreground)]">
+              <span className="material-symbols-outlined text-[var(--color-foreground)]" aria-hidden="true">
                 arrow_back
               </span>
             </a>
@@ -96,9 +97,10 @@ export function CarritoContent({
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
               href={`/${slug}/menu`}
+              aria-label="Volver al menú"
               className="flex size-12 shrink-0 items-center justify-center active:scale-95 transition-transform"
             >
-              <span className="material-symbols-outlined text-[var(--color-foreground)]">
+              <span className="material-symbols-outlined text-[var(--color-foreground)]" aria-hidden="true">
                 arrow_back
               </span>
             </a>
@@ -149,9 +151,10 @@ export function CarritoContent({
                 <div className="flex flex-col items-end gap-3 flex-shrink-0">
                   <button
                     onClick={() => removeItem(item.productId)}
+                    aria-label={`Eliminar ${item.name} del carrito`}
                     className="text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">delete</span>
                   </button>
                   <div className="flex items-center gap-3 bg-gray-50 rounded-full px-2 py-1">
                     <button
@@ -160,18 +163,20 @@ export function CarritoContent({
                           ? removeItem(item.productId)
                           : updateQuantity(item.productId, item.quantity - 1)
                       }
+                      aria-label={`Disminuir cantidad de ${item.name}`}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[var(--color-primary)] shadow-sm active:scale-90 transition-transform"
                     >
-                      <span className="material-symbols-outlined text-sm">remove</span>
+                      <span className="material-symbols-outlined text-sm" aria-hidden="true">remove</span>
                     </button>
                     <span className="text-base font-bold min-w-[1.5rem] text-center text-[var(--color-foreground)]">
                       {item.quantity}
                     </span>
                     <button
                       onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      aria-label={`Aumentar cantidad de ${item.name}`}
                       className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm active:scale-90 transition-transform"
                     >
-                      <span className="material-symbols-outlined text-sm">add</span>
+                      <span className="material-symbols-outlined text-sm" aria-hidden="true">add</span>
                     </button>
                   </div>
                 </div>

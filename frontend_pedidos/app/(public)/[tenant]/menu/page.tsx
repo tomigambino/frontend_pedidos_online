@@ -91,9 +91,10 @@ export default async function MenuDigitalPage({
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
               href={`/${slug}`}
+              aria-label="Volver al inicio"
               className="flex size-12 shrink-0 items-center justify-center active:scale-95 transition-transform"
             >
-              <span className="material-symbols-outlined text-[var(--color-foreground)]">
+              <span className="material-symbols-outlined text-[var(--color-foreground)]" aria-hidden="true">
                 arrow_back
               </span>
             </a>
@@ -104,7 +105,11 @@ export default async function MenuDigitalPage({
               <InfoNegocioModal
                 tenant={tenant}
                 trigger={
-                  <span className="material-symbols-outlined text-[var(--color-foreground)]">
+                  <span
+                    className="material-symbols-outlined text-[var(--color-foreground)]"
+                    role="img"
+                    aria-label="Ver información del negocio"
+                  >
                     info
                   </span>
                 }
