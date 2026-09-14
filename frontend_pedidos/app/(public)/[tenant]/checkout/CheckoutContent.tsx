@@ -49,9 +49,10 @@ export function CheckoutContent({
           <div className="flex items-center p-4 pb-2 justify-between">
             <a
               href={`/${slug}/menu`}
+              aria-label="Volver al menú"
               className="flex size-12 shrink-0 items-center justify-center active:scale-95 transition-transform"
             >
-              <span className="material-symbols-outlined text-[var(--color-foreground)]">
+              <span className="material-symbols-outlined text-[var(--color-foreground)]" aria-hidden="true">
                 arrow_back
               </span>
             </a>
@@ -151,9 +152,10 @@ export function CheckoutContent({
         <div className="flex items-center p-4 pb-2 justify-between">
           <a
             href={`/${slug}/carrito`}
+            aria-label="Volver al carrito"
             className="flex size-12 shrink-0 items-center justify-center active:scale-95 transition-transform"
           >
-            <span className="material-symbols-outlined text-[var(--color-foreground)]">
+            <span className="material-symbols-outlined text-[var(--color-foreground)]" aria-hidden="true">
               arrow_back
             </span>
           </a>
