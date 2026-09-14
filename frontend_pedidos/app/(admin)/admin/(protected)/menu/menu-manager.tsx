@@ -67,10 +67,12 @@ export function MenuManager() {
         setTotalPages(res.totalPages);
         setTotalItems(res.total);
       }
+    } catch {
+      show('No se pudo cargar el menú', 'error');
     } finally {
       setLoading(false);
     }
-  }, [tenantSlug, tab, page]);
+  }, [tenantSlug, tab, page, show]);
 
   useEffect(() => {
     const timeout = setTimeout(loadData, 0);
@@ -84,12 +86,12 @@ export function MenuManager() {
         if (active) setCategories(res.data);
       })
       .catch(() => {
-        // sin categorías cargadas
+        if (active) show('No se pudieron cargar las categorías', 'error');
       });
     return () => {
       active = false;
     };
-  }, [tenantSlug]);
+  }, [tenantSlug, show]);
 
   const activeProducts = products.filter((p) => p.isActive).length;
   const hiddenProducts = products.length - activeProducts;
