@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { apiClient } from '@/lib/api/client';
 import type { ProductResponseDto } from '@/lib/api/products';
 import { deleteProductImage } from '@/lib/api/products';
@@ -162,10 +163,12 @@ export function ProductFormModal({
             />
             {previewUrl ? (
               <div className="relative w-full h-28 rounded-lg overflow-hidden border border-black/15">
-                <img
+                <Image
                   src={previewUrl}
                   alt="Vista previa"
-                  className="w-full h-full object-cover"
+                  fill
+                  unoptimized={previewUrl.startsWith('blob:')}
+                  className="object-cover"
                 />
                 {!saving && (
                   <button

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { buildWeekSchedule } from '@/lib/utils/schedule';
@@ -42,10 +43,11 @@ export function InfoNegocioContent({
           <div className="md:col-span-5 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="relative w-40 h-40 md:w-52 md:h-52 mb-6 rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white flex items-center justify-center bg-white">
               {tenant.logo ? (
-                <img
-                  className="w-full h-full object-cover"
+                <Image
                   src={tenant.logo}
                   alt={tenant.name}
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <span
