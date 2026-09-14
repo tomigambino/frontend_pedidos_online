@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useAdminSession } from '@/components/admin/AdminSessionProvider';
 import {
   getTenantConfig,
@@ -606,7 +607,13 @@ function Appearance({
           <input ref={logoInputRef} type="file" accept="image/*" onChange={onLogoFileChange} className="hidden" />
           {effectiveLogo ? (
             <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-black/15">
-              <img src={effectiveLogo} alt="Logo" className="w-full h-full object-cover" />
+              <Image
+                src={effectiveLogo}
+                alt="Logo"
+                fill
+                unoptimized={effectiveLogo.startsWith('blob:')}
+                className="object-cover"
+              />
               {editing && (
                 <button
                   type="button"
@@ -634,7 +641,13 @@ function Appearance({
           <input ref={bannerInputRef} type="file" accept="image/*" onChange={onBannerFileChange} className="hidden" />
           {effectiveBanner ? (
             <div className="relative w-64 h-32 rounded-2xl overflow-hidden border border-black/15">
-              <img src={effectiveBanner} alt="Banner" className="w-full h-full object-cover" />
+              <Image
+                src={effectiveBanner}
+                alt="Banner"
+                fill
+                unoptimized={effectiveBanner.startsWith('blob:')}
+                className="object-cover"
+              />
               {editing && (
                 <button
                   type="button"
