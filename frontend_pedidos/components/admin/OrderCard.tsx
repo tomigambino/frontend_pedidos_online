@@ -8,6 +8,7 @@ import {
   type OrderStatus,
 } from '@/lib/api/orders';
 import { ACTIONS, VARIANT_CLASSES } from '@/lib/order-actions';
+import { Toast, useToast } from '@/components/admin/Toast';
 
 const TERMINAL_STATES: OrderStatus[] = ['ENTREGADO', 'CANCELADO', 'NO_RETIRADO'];
 
@@ -76,19 +77,27 @@ export function OrderCard({
 }) {
   const [loadingNext, setLoadingNext] = useState<OrderStatus | null>(null);
   const isTerminal = TERMINAL_STATES.includes(order.status);
+  const { toast, show } = useToast();
 
   async function handleAction(next: OrderStatus) {
     setLoadingNext(next);
     try {
       const updated = await updateOrderStatus(tenantSlug, order.id, { status: next });
       onUpdated(updated);
+    } catch (e) {
+      const message =
+        e instanceof Error && e.message && e.message !== 'Error desconocido'
+          ? e.message
+          : 'No se pudo actualizar el pedido';
+      show(message, 'error');
     } finally {
       setLoadingNext(null);
     }
   }
 
   return (
-    <article
+    <>
+      <article
       className={`rounded-xl p-6 flex flex-col gap-6 transition-all duration-300 ${
         isTerminal
           ? 'bg-slate-50/50 opacity-75 border border-dashed border-gray-100'
@@ -165,5 +174,7 @@ export function OrderCard({
         </div>
       )}
     </article>
+      <Toast toast={toast} />
+    </>
   );
 }
