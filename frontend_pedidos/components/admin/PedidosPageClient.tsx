@@ -46,8 +46,23 @@ export function PedidosPageClient({
   }, [fetchData]);
 
   useEffect(() => {
-    const interval = setInterval(fetchData, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    }, POLL_INTERVAL_MS);
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchData]);
 
   return (
