@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -42,10 +43,13 @@ export default async function MenuPage({
         <section className="relative h-[751px] w-full flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0 z-0">
             {tenant.banner ? (
-              <img
-                className="w-full h-full object-cover"
+              <Image
                 src={tenant.banner}
                 alt={tenant.name}
+                fill
+                preload
+                sizes="100vw"
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)]" />
@@ -55,9 +59,11 @@ export default async function MenuPage({
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pb-20 text-white flex flex-col items-center text-center">
             <div className="w-24 h-24 bg-white rounded-3xl p-4 shadow-xl mb-6 flex items-center justify-center drop-shadow-md shadow-md">
               {tenant.logo ? (
-                <img
+                <Image
                   src={tenant.logo}
                   alt={tenant.name}
+                  width={96}
+                  height={96}
                   className="w-full h-full object-contain"
                 />
               ) : (

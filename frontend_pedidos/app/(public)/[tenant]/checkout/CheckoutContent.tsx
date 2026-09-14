@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
@@ -377,10 +378,12 @@ export function CheckoutContent({
                   <div key={item.productId} className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
                       {item.imageUrl ? (
-                        <img
-                          className="w-full h-full object-cover"
+                        <Image
                           src={item.imageUrl}
                           alt={item.name}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <span className="material-symbols-outlined text-[var(--color-muted)] text-2xl">
