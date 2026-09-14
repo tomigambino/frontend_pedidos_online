@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
@@ -121,10 +122,12 @@ export function CarritoContent({
               >
                 <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
                   {item.imageUrl ? (
-                    <img
-                      className="w-full h-full object-cover"
+                    <Image
                       src={item.imageUrl}
                       alt={item.name}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="material-symbols-outlined text-[var(--color-muted)] text-3xl">

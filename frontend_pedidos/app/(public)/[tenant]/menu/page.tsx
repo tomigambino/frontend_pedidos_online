@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
 import { getProducts } from '@/lib/api/products';
@@ -40,10 +41,12 @@ function ProductCard({
       </div>
       <div className="w-32 h-32 shrink-0 bg-center bg-no-repeat bg-cover rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
         {product.imageUrl ? (
-          <img
-            className="w-full h-full object-cover"
+          <Image
             src={product.imageUrl}
             alt={product.name}
+            width={128}
+            height={128}
+            className="w-full h-full object-cover"
           />
         ) : (
           <span className="material-symbols-outlined text-[var(--color-muted)] text-3xl">
