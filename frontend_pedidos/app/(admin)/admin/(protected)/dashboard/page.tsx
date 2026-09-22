@@ -41,7 +41,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <RecentOrdersTable initialOrders={activeOrders} />
+          <RecentOrdersTable initialOrders={activeOrders} tenantSlug={session.tenantSlug} />
         </div>
         <QuickActions />
       </div>

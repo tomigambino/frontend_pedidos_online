@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {
+  getWhatsappLink,
   updateOrderStatus,
   type DeliveryType,
   type OrderResponseDto,
@@ -76,8 +77,21 @@ export function OrderCard({
   onUpdated: (updated: OrderResponseDto) => void;
 }) {
   const [loadingNext, setLoadingNext] = useState<OrderStatus | null>(null);
+  const [sendingWa, setSendingWa] = useState(false);
   const isTerminal = TERMINAL_STATES.includes(order.status);
   const { toast, show } = useToast();
+
+  async function handleWhatsapp() {
+    setSendingWa(true);
+    try {
+      const { url } = await getWhatsappLink(tenantSlug, order.id);
+      window.open(url, '_blank');
+    } catch {
+      show('No se pudo generar el link de WhatsApp', 'error');
+    } finally {
+      setSendingWa(false);
+    }
+  }
 
   async function handleAction(next: OrderStatus) {
     setLoadingNext(next);
@@ -115,6 +129,18 @@ export function OrderCard({
             >
               {STATUS_LABELS[order.status]}
             </span>
+            <button
+              type="button"
+              onClick={handleWhatsapp}
+              disabled={sendingWa}
+              aria-label="Enviar por WhatsApp"
+              title="Enviar por WhatsApp"
+              className="ml-1 w-8 h-8 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center transition-all hover:bg-[#25D366] hover:text-white active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined text-lg">
+                {sendingWa ? 'progress_activity' : 'chat'}
+              </span>
+            </button>
           </div>
           <p className="text-sm font-medium text-muted flex items-center gap-1.5">
             <span className="material-symbols-outlined text-lg">schedule</span>

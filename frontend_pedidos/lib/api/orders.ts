@@ -73,6 +73,11 @@ export interface DeliveryResponseDto {
   deliveryFee: number;
 }
 
+export interface WhatsappLinkResponseDto {
+  url: string;
+  message: string;
+}
+
 export function getOrderByTracking(slug: string, trackingUuid: string) {
   return apiClient<OrderResponseDto>(`/${slug}/orders/${trackingUuid}/track`);
 }
@@ -165,4 +170,8 @@ export function updateOrderStatus(
     method: 'PATCH',
     body: JSON.stringify(dto),
   });
+}
+
+export function getWhatsappLink(slug: string, orderId: string) {
+  return apiClient<WhatsappLinkResponseDto>(`/${slug}/orders/${orderId}/whatsapp-link`);
 }
