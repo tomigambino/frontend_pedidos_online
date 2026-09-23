@@ -11,16 +11,16 @@ export interface OrderAction {
 
 export const ACTIONS: Record<OrderStatus, OrderAction[]> = {
   PENDIENTE: [
-    { label: 'Confirmar', next: 'EN_PREPARACION', variant: 'primary', icon: 'play_arrow' },
     { label: 'Cancelar', next: 'CANCELADO', variant: 'danger', icon: 'close' },
+    { label: 'Confirmar', next: 'EN_PREPARACION', variant: 'primary', icon: 'play_arrow' },
   ],
   EN_PREPARACION: [
-    { label: 'Listo', next: 'LISTO', variant: 'success', icon: 'done_all' },
     { label: 'Cancelar', next: 'CANCELADO', variant: 'danger', icon: 'close' },
+    { label: 'Listo', next: 'LISTO', variant: 'success', icon: 'done_all' },
   ],
   LISTO: [
-    { label: 'Entregar', next: 'ENTREGADO', variant: 'success', icon: 'delivery_dining' },
     { label: 'No retirado', next: 'NO_RETIRADO', variant: 'danger', icon: 'block' },
+    { label: 'Entregar', next: 'ENTREGADO', variant: 'success', icon: 'delivery_dining' },
   ],
   ENTREGADO: [],
   CANCELADO: [],
