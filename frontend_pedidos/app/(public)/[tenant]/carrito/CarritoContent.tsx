@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
@@ -18,12 +19,17 @@ export function CarritoContent({
 }) {
   const router = useRouter();
   const { items, updateQuantity, removeItem } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const delivery = tenant.deliveryCostEnabled ? Number(tenant.deliveryCost ?? 0) : 0;
   const total = tenant.deliveryCostEnabled ? subtotal + delivery : subtotal;
 
-  if (items.length === 0) {
+  if (!mounted || items.length === 0) {
     return (
       <div className={`relative flex min-h-screen w-full flex-col ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
         <div className="sticky top-0 z-50 bg-white border-b border-gray-100">

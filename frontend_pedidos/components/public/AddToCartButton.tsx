@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useCart } from '@/lib/context/CartContext';
 
 interface AddToCartButtonProps {
@@ -11,7 +12,13 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ productId, name, price, imageUrl }: AddToCartButtonProps) {
   const { items, addItem, updateQuantity, removeItem } = useCart();
-  const qty = items.find((i) => i.productId === productId)?.quantity ?? 0;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const qty = mounted ? items.find((i) => i.productId === productId)?.quantity ?? 0 : 0;
 
   if (qty === 0) {
     return (

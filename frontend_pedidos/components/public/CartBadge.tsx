@@ -1,9 +1,16 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/lib/context/CartContext';
 
 export function CartBadge() {
   const { items } = useCart();
-  const count = items.reduce((sum, item) => sum + item.quantity, 0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const count = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
 
   if (count === 0) return null;
 
