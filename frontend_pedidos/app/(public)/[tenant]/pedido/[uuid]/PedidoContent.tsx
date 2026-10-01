@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { type OrderResponseDto } from '@/lib/api/orders';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
+import { getTodaySchedule } from '@/lib/utils/schedule';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const STEPS = ['PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'] as const;
@@ -32,18 +33,6 @@ const STATUS_INFO: Record<string, { title: string; description: string }> = {
 
 function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
-}
-
-function getTodaySchedule(
-  regular: { dayOfWeek: number; openingTime: string; closingTime: string }[],
-) {
-  const dayIndex = (new Date().getDay() + 6) % 7 + 1;
-  const today = regular.find((s) => s.dayOfWeek === dayIndex);
-  if (!today) return null;
-  return {
-    openingTime: today.openingTime.slice(0, 5),
-    closingTime: today.closingTime.slice(0, 5),
-  };
 }
 
 const DAY_NAMES: Record<number, string> = {

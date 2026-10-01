@@ -10,6 +10,7 @@ import {
   type PaymentMethod,
 } from '@/lib/api/orders';
 import { ACTIONS, VARIANT_CLASSES } from '@/lib/order-actions';
+import { APP_TIMEZONE } from '@/lib/utils/schedule';
 import { Toast, useToast } from '@/components/admin/Toast';
 
 const TERMINAL_STATES: OrderStatus[] = ['ENTREGADO', 'CANCELADO', 'NO_RETIRADO'];
@@ -58,20 +59,43 @@ const MONTHS_SHORT = [
   'Dic',
 ];
 
+const clockFormatter = new Intl.DateTimeFormat('es-AR', {
+  timeZone: APP_TIMEZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+const zonedPartsFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: APP_TIMEZONE,
+  day: 'numeric',
+  month: 'numeric',
+});
+
+function zonedPart(
+  formatter: Intl.DateTimeFormat,
+  type: 'day' | 'month',
+  iso: string,
+) {
+  return (
+    formatter
+      .formatToParts(new Date(iso))
+      .find((p) => p.type === type)?.value ?? ''
+  );
+}
+
 function formatPrice(total: number) {
   return `$${total.toLocaleString('es-AR')}`;
 }
 
 function formatClock(iso: string) {
-  const d = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  return clockFormatter.format(new Date(iso));
 }
 
 function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${formatClock(iso)}`;
+  const day = zonedPart(zonedPartsFormatter, 'day', iso);
+  const monthIndex = Number(zonedPart(zonedPartsFormatter, 'month', iso)) - 1;
+  return `${day} ${MONTHS_SHORT[monthIndex]}, ${formatClock(iso)}`;
 }
 
 export function OrderCard({

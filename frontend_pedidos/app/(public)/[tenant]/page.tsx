@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { getTodaySchedule } from '@/lib/utils/schedule';
 
 const CATEGORY_ICONS: Record<string, string> = {
   Bebidas: 'local_drink',
@@ -10,18 +11,6 @@ const CATEGORY_ICONS: Record<string, string> = {
   Postres: 'cake',
   Ensaladas: 'spa',
 };
-
-function getTodaySchedule(
-  regular: { dayOfWeek: number; openingTime: string; closingTime: string }[],
-) {
-  const dayIndex = (new Date().getDay() + 6) % 7 + 1;
-  const today = regular.find((s) => s.dayOfWeek === dayIndex);
-  if (!today) return null;
-  return {
-    openingTime: today.openingTime.slice(0, 5),
-    closingTime: today.closingTime.slice(0, 5),
-  };
-}
 
 export default async function MenuPage({
   params,

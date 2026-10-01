@@ -175,7 +175,9 @@ Archivo: `app/(admin)/admin/(protected)/configuracion/config-manager.tsx`
 
 ## 10. Convenciones
 
-- **Día ISO → 1..7 (Lun=1)**: `(getDay() + 6) % 7 + 1` (`lib/utils/schedule.ts:26`, `PedidoContent.tsx:40`).
+- **Zona horaria de la app**: `APP_TIMEZONE = 'America/Argentina/Buenos_Aires'` (`lib/utils/schedule.ts:26`). Todo lo que dependa del "día de hoy" se resuelve con `Intl` + `timeZone`, nunca con `new Date()` directo ni getters locales, que usarían la zona del runtime (UTC en producción) y devuelven el día equivocado cerca de medianoche.
+- **Día ISO → 1..7 (Lun=1)**: `getIsoDayOfWeek()` (`lib/utils/schedule.ts:42`), reexpuesto como `getTodayDayOfWeek()` (`:47`). No se duplica en los componentes: ambos consumen `getTodaySchedule()` (`lib/utils/schedule.ts:55`) desde `app/(public)/[tenant]/page.tsx` y `app/(public)/[tenant]/pedido/[uuid]/PedidoContent.tsx:7`.
+- **Fecha y hora locales del negocio**: `getZonedDateKey()` (`lib/utils/schedule.ts:35`) resuelve la fecha civil en `APP_TIMEZONE`; la usan `today()` (`lib/dates.ts:3`) y los formateadores de `components/admin/OrderCard.tsx` (`formatClock`, `formatDateTime`), que también declaran `timeZone: APP_TIMEZONE`.
 - **Formato precios**: `es-AR` → `price.toLocaleString('es-AR')` con prefijo `$` (`formatPrice` en Checkout y PedidoContent).
 - **Imágenes remotas**: solo `res.cloudinary.com` (configurado en `next.config.ts` `images.remotePatterns`).
 - **Íconos**: **Material Symbols** (fuente Google Fonts, clase `material-symbols-outlined`).

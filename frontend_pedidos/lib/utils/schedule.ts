@@ -23,19 +23,44 @@ export const DAY_NAMES: Record<number, string> = {
   7: 'Domingo',
 };
 
+export const APP_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
+const zonedDateKeyFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: APP_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export function getZonedDateKey(date: Date = new Date()): string {
+  const parts = zonedDateKeyFormatter.formatToParts(date);
+  const part = (type: 'year' | 'month' | 'day') =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+export function getIsoDayOfWeek(date: Date = new Date()): number {
+  const [year, month, day] = getZonedDateKey(date).split('-').map(Number);
+  return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7 + 1;
+}
+
 export function getTodayDayOfWeek(): number {
-  return (new Date().getDay() + 6) % 7 + 1;
+  return getIsoDayOfWeek();
 }
 
 function trimTime(time: string | null): string {
   return time ? time.slice(0, 5) : '';
 }
 
-function toDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+export function getTodaySchedule(
+  regular: RegularScheduleDto[],
+): ScheduleSlot | null {
+  const today = regular.find((r) => r.dayOfWeek === getTodayDayOfWeek());
+  if (!today) return null;
+  return {
+    openingTime: trimTime(today.openingTime),
+    closingTime: trimTime(today.closingTime),
+  };
 }
 
 export function buildWeekSchedule(
@@ -43,7 +68,7 @@ export function buildWeekSchedule(
   exceptions: ExceptionDto[],
 ): DaySchedule[] {
   const today = getTodayDayOfWeek();
-  const todayKey = toDateKey(new Date());
+  const todayKey = getZonedDateKey();
   const todayException = exceptions.find((e) => e.date === todayKey);
 
   return Array.from({ length: 7 }, (_, i) => i + 1).map((dayOfWeek) => {
