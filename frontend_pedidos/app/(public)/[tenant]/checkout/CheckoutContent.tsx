@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { createOrder, type PaymentMethod, type DeliveryType, type CreateOrderDto } from '@/lib/api/orders';
+import { writeActiveOrder } from '@/lib/utils/active-order';
 
 function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
@@ -138,6 +139,7 @@ export function CheckoutContent({
     setSubmitting(true);
     try {
       const res = await createOrder(slug, dto);
+      writeActiveOrder(slug, res.trackingUuid);
       clear();
       router.push(`/${slug}/pedido/${res.trackingUuid}`);
     } catch (err) {
