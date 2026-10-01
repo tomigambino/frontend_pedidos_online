@@ -1,5 +1,16 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
 export async function apiClient<T>(
   path: string,
   options: RequestInit = {},
@@ -18,7 +29,7 @@ export async function apiClient<T>(
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Error desconocido' }));
-    throw new Error(error.message ?? `Error ${res.status}`);
+    throw new ApiError(error.message ?? `Error ${res.status}`, res.status);
   }
 
   if (res.status === 204 || res.headers.get('content-length') === '0') {
