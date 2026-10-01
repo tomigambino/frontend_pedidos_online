@@ -6,6 +6,7 @@ import { InfoNegocioModal } from '@/components/public/InfoNegocioModal';
 import { CategoryNav } from '@/components/public/CategoryNav';
 import { AddToCartButton } from '@/components/public/AddToCartButton';
 import { CartBadge } from '@/components/public/CartBadge';
+import { isValidImageUrl } from '@/lib/utils/image';
 
 function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
@@ -40,7 +41,7 @@ function ProductCard({
         />
       </div>
       <div className="w-32 h-32 shrink-0 bg-center bg-no-repeat bg-cover rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-        {product.imageUrl ? (
+        {isValidImageUrl(product.imageUrl) ? (
           <Image
             src={product.imageUrl}
             alt={product.name}
