@@ -3,6 +3,7 @@ import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { getTodaySchedule } from '@/lib/utils/schedule';
+import { ActiveOrderBanner } from '@/components/public/ActiveOrderBanner';
 
 const CATEGORY_ICONS: Record<string, string> = {
   Bebidas: 'local_drink',
@@ -28,6 +29,7 @@ export default async function MenuPage({
 
   return (
     <>
+      <ActiveOrderBanner slug={slug} />
       <main className={`w-full ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
         <section className="relative h-[751px] w-full flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0 z-0">
