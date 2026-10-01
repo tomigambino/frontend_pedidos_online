@@ -1,4 +1,5 @@
 import { getTenantAvailability } from '@/lib/api/tenants';
+import { CartProvider } from '@/lib/context/CartContext';
 
 export default async function PublicTenantLayout({
   children,
@@ -16,8 +17,10 @@ export default async function PublicTenantLayout({
   } as React.CSSProperties;
 
   return (
-    <div style={themeStyle} data-tenant={slug}>
-      {children}
-    </div>
+    <CartProvider slug={slug} key={slug}>
+      <div style={themeStyle} data-tenant={slug}>
+        {children}
+      </div>
+    </CartProvider>
   );
 }
