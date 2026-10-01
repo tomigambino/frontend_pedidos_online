@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { type OrderResponseDto } from '@/lib/api/orders';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { getTodaySchedule } from '@/lib/utils/schedule';
+import { clearActiveOrder, readActiveOrder } from '@/lib/utils/active-order';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const STEPS = ['PENDIENTE', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'] as const;
@@ -97,6 +98,13 @@ export function PedidoContent({
     };
 
     return () => es.close();
+  }, [slug, initialOrder.trackingUuid, isTerminal]);
+
+  useEffect(() => {
+    if (!isTerminal) return;
+    if (readActiveOrder(slug) === initialOrder.trackingUuid) {
+      clearActiveOrder(slug);
+    }
   }, [slug, initialOrder.trackingUuid, isTerminal]);
 
   const [showCopied, setShowCopied] = useState(false);
