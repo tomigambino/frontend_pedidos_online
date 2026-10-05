@@ -52,6 +52,13 @@ export default async function DashboardPage() {
 function QuickActions() {
   const actions = [
     {
+      href: '/admin/pedidos?nuevo=1',
+      icon: 'add_shopping_cart',
+      label: 'Crear un pedido',
+      desc: 'Registrá un pedido manualmente',
+      color: 'bg-primary/10 text-primary',
+    },
+    {
       href: '/admin/menu',
       icon: 'add',
       label: 'Agregar producto',

@@ -5,8 +5,13 @@ import { getMe, type AdminSession } from '@/lib/api/auth';
 import { today } from '@/lib/dates';
 import { getOrderCounts, getOrdersFiltered } from '@/lib/api/orders';
 
-export default async function PedidosPage() {
+export default async function PedidosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const cookie = (await cookies()).toString();
+  const { nuevo } = await searchParams;
 
   let session: AdminSession;
   try {
@@ -23,14 +28,11 @@ export default async function PedidosPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground">Gestión de Pedidos</h2>
-        <p className="text-muted">Control en tiempo real del flujo de cocina.</p>
-      </section>
       <PedidosPageClient
         initialOrders={orders.data}
         initialCounts={counts}
         tenantSlug={session.tenantSlug}
+        autoCreate={nuevo === '1'}
       />
     </div>
   );
