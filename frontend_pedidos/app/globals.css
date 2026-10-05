@@ -54,3 +54,41 @@ body {
   color: var(--foreground);
   overflow-x: hidden;
 }
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 4mm;
+  }
+
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  #print-root {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    inset: auto !important;
+  }
+
+  #print-root .no-print {
+    display: none !important;
+  }
+
+  #print-root .print-preview {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  #print-root * {
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { PedidosFiltersBar } from '@/components/admin/PedidosFiltersBar';
 import { PedidosGrid } from '@/components/admin/PedidosGrid';
 import { CreateOrderModal } from '@/components/admin/CreateOrderModal';
+import { OrderPrintDialog } from '@/components/admin/OrderPrintDialog';
 import { Toast, useToast } from '@/components/admin/Toast';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import {
@@ -14,6 +15,7 @@ import {
 } from '@/lib/api/orders';
 import { getProducts, type ProductResponseDto } from '@/lib/api/products';
 import { getCategories, type CategoryResponseDto } from '@/lib/api/categories';
+import type { TenantConfigResponseDto } from '@/lib/api/tenants';
 
 const POLL_INTERVAL_MS = 20000;
 
@@ -21,11 +23,13 @@ export function PedidosPageClient({
   initialOrders,
   initialCounts,
   tenantSlug,
+  tenant,
   autoCreate = false,
 }: {
   initialOrders: OrderResponseDto[];
   initialCounts: Record<OrderStatus, number>;
   tenantSlug: string;
+  tenant: TenantConfigResponseDto;
   autoCreate?: boolean;
 }) {
   const filtersHook = usePedidosFilters();
@@ -33,6 +37,7 @@ export function PedidosPageClient({
   const [orders, setOrders] = useState(initialOrders);
   const [counts, setCounts] = useState(initialCounts);
   const [createOpen, setCreateOpen] = useState(false);
+  const [printOrder, setPrintOrder] = useState<OrderResponseDto | null>(null);
   const [products, setProducts] = useState<ProductResponseDto[]>([]);
   const [categories, setCategories] = useState<CategoryResponseDto[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -124,7 +129,12 @@ export function PedidosPageClient({
       </section>
 
       <PedidosFiltersBar filtersHook={filtersHook} counts={counts} />
-      <PedidosGrid initialOrders={orders} tenantSlug={tenantSlug} onOrderUpdated={fetchData} />
+      <PedidosGrid
+        initialOrders={orders}
+        tenantSlug={tenantSlug}
+        onOrderUpdated={fetchData}
+        onPrint={setPrintOrder}
+      />
 
       {createOpen && (
         <CreateOrderModal
@@ -134,6 +144,14 @@ export function PedidosPageClient({
           loading={productsLoading}
           onClose={() => setCreateOpen(false)}
           onCreated={handleCreated}
+        />
+      )}
+
+      {printOrder && (
+        <OrderPrintDialog
+          order={printOrder}
+          tenant={tenant}
+          onClose={() => setPrintOrder(null)}
         />
       )}
 

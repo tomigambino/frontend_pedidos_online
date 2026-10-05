@@ -102,10 +102,12 @@ export function OrderCard({
   order,
   tenantSlug,
   onUpdated,
+  onPrint,
 }: {
   order: OrderResponseDto;
   tenantSlug: string;
   onUpdated: (updated: OrderResponseDto) => void;
+  onPrint: (order: OrderResponseDto) => void;
 }) {
   const [loadingNext, setLoadingNext] = useState<OrderStatus | null>(null);
   const [sendingWa, setSendingWa] = useState(false);
@@ -149,10 +151,10 @@ export function OrderCard({
           : 'bg-white border border-gray-100 shadow-sm group hover:shadow-lg hover:translate-y-[-4px]'
       }`}
     >
-      <div className="flex justify-between items-start pb-5 border-b border-gray-50">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl font-extrabold text-foreground">
+      <div className="flex justify-between items-start gap-4 pb-5 border-b border-gray-50">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
+            <span className="text-xl font-extrabold text-foreground">
               #{order.id.slice(0, 8).toUpperCase()}
             </span>
             <span
@@ -160,6 +162,15 @@ export function OrderCard({
             >
               {STATUS_LABELS[order.status]}
             </span>
+            <button
+              type="button"
+              onClick={() => onPrint(order)}
+              aria-label="Imprimir comanda"
+              title="Imprimir comanda o recibo"
+              className="w-8 h-8 rounded-full bg-black/5 text-muted flex items-center justify-center transition-colors hover:text-primary"
+            >
+              <span className="material-symbols-outlined text-lg">print</span>
+            </button>
           </div>
           <p className="text-sm font-medium text-muted flex items-center gap-1.5">
             <span className="material-symbols-outlined text-lg">schedule</span>
@@ -168,14 +179,14 @@ export function OrderCard({
               : formatDateTime(order.createdAt)}
           </p>
         </div>
-        <div className="text-right">
-          <p className={`text-xl font-semibold mb-1 ${isTerminal ? 'text-slate-400' : 'text-primary'}`}>
+        <div className="shrink-0 text-right">
+          <p className={`text-xl font-semibold mb-1 whitespace-nowrap ${isTerminal ? 'text-slate-400' : 'text-primary'}`}>
             {formatPrice(order.total)}
           </p>
-          <p className="text-[11px] font-bold text-muted uppercase">
+          <p className="text-[11px] font-bold text-muted uppercase whitespace-nowrap">
             {DELIVERY_LABELS[order.deliveryType]}
           </p>
-          <p className="text-[11px] font-bold text-muted/80 flex items-center justify-end gap-1 mt-0.5">
+          <p className="text-[11px] font-bold text-muted/80 flex items-center justify-end gap-1 mt-0.5 whitespace-nowrap">
             <span className="material-symbols-outlined text-sm">payments</span>
             {PAYMENT_LABELS[order.paymentMethod]}
           </p>

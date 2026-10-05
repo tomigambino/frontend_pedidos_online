@@ -8,10 +8,12 @@ export function PedidosGrid({
   initialOrders,
   tenantSlug,
   onOrderUpdated,
+  onPrint,
 }: {
   initialOrders: OrderResponseDto[];
   tenantSlug: string;
   onOrderUpdated: () => void;
+  onPrint: (order: OrderResponseDto) => void;
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [prevInitial, setPrevInitial] = useState(initialOrders);
@@ -35,13 +37,14 @@ export function PedidosGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {orders.map((order) => (
         <OrderCard
           key={order.id}
           order={order}
           tenantSlug={tenantSlug}
           onUpdated={handleUpdated}
+          onPrint={onPrint}
         />
       ))}
     </div>

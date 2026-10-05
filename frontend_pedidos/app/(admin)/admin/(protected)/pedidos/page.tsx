@@ -4,6 +4,7 @@ import { PedidosPageClient } from '@/components/admin/PedidosPageClient';
 import { getMe, type AdminSession } from '@/lib/api/auth';
 import { today } from '@/lib/dates';
 import { getOrderCounts, getOrdersFiltered } from '@/lib/api/orders';
+import { getTenantAvailability } from '@/lib/api/tenants';
 
 export default async function PedidosPage({
   searchParams,
@@ -21,9 +22,10 @@ export default async function PedidosPage({
   }
 
   const date = today();
-  const [orders, counts] = await Promise.all([
+  const [orders, counts, tenant] = await Promise.all([
     getOrdersFiltered(session.tenantSlug, { dateFrom: date, dateTo: date }, cookie),
     getOrderCounts(session.tenantSlug, { dateFrom: date, dateTo: date }, cookie),
+    getTenantAvailability(session.tenantSlug),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function PedidosPage({
         initialOrders={orders.data}
         initialCounts={counts}
         tenantSlug={session.tenantSlug}
+        tenant={tenant}
         autoCreate={nuevo === '1'}
       />
     </div>
