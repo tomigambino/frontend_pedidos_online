@@ -280,14 +280,6 @@ export function getTargetShift(
   };
 }
 
-/** @deprecated Usar getEffectiveDaySchedule/getTargetShift. Se elimina en F5b. */
-export function getTodaySchedule(
-  regular: RegularScheduleDto[],
-): ScheduleSlot | null {
-  const { slots } = getEffectiveDaySchedule(regular, [], getZonedDateKey());
-  return slots[0] ?? null;
-}
-
 export function buildWeekSchedule(
   regular: RegularScheduleDto[],
   exceptions: ExceptionDto[],
