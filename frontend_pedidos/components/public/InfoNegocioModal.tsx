@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { TenantConfigResponseDto } from '@/lib/api/tenants';
-import { buildWeekSchedule } from '@/lib/utils/schedule';
+import { buildWeekSchedule, formatSlot } from '@/lib/utils/schedule';
 
 export function InfoNegocioModal({
   tenant,
@@ -69,7 +69,13 @@ export function InfoNegocioModal({
                     .filter((d) => d.isOpen)
                     .map((d) => (
                       <p key={d.dayOfWeek} className="text-[var(--color-foreground)] text-sm">
-                        {d.label}: {d.slots.map((s) => `${s.openingTime}–${s.closingTime}`).join(', ')}
+                        {d.label}:{' '}
+                        {d.slots.map((slot, i) => (
+                          <span key={`${d.dayOfWeek}-${i}`}>
+                            {i > 0 ? ', ' : ''}
+                            {formatSlot(slot)}
+                          </span>
+                        ))}
                       </p>
                     ))}
                   {!hasAnyOpenDay && (

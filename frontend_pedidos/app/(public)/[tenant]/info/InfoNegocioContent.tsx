@@ -3,7 +3,12 @@
 import Image from 'next/image';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { buildWeekSchedule } from '@/lib/utils/schedule';
+import {
+  buildWeekSchedule,
+  formatSlot,
+  getEffectiveDaySchedule,
+  getZonedDateKey,
+} from '@/lib/utils/schedule';
 
 export function InfoNegocioContent({
   slug,
@@ -13,11 +18,15 @@ export function InfoNegocioContent({
   tenant: TenantConfigResponseDto;
 }) {
   const weekSchedule = buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions);
-  const today = weekSchedule.find((d) => d.isToday);
+  const todaySchedule = getEffectiveDaySchedule(
+    tenant.schedule.regular,
+    tenant.schedule.exceptions,
+    getZonedDateKey(),
+  );
   const scheduleLabel =
-  today && today.isOpen && today.slots.length > 0
-    ? today.slots.map((s) => `${s.openingTime}–${s.closingTime}`).join(', ')
-    : null;
+    todaySchedule.isOpen && todaySchedule.slots.length > 0
+      ? todaySchedule.slots.map(formatSlot).join(', ')
+      : null;
 
   return (
     <div className={`relative flex min-h-screen w-full flex-col ${tenant.secondaryColor ? 'bg-[var(--color-secondary)]/10' : 'bg-gray-50'}`}>
@@ -162,7 +171,11 @@ export function InfoNegocioContent({
                 <span className="text-[var(--color-foreground)] font-bold flex flex-col gap-0.5">
                   {day.isOpen && day.slots.length > 0
                     ? day.slots.map((slot, i) => (
-                        <span key={i}>{slot.openingTime} - {slot.closingTime}</span>
+                        <span
+                          key={`${slot.openingTime}-${slot.closingTime}-${i}`}
+                        >
+                          {formatSlot(slot)}
+                        </span>
                       ))
                     : 'Cerrado'}
                 </span>
