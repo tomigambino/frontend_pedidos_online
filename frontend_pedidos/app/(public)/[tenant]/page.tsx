@@ -2,7 +2,12 @@ import Image from 'next/image';
 import { getTenantAvailability } from '@/lib/api/tenants';
 import { getCategories } from '@/lib/api/categories';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { getTodaySchedule } from '@/lib/utils/schedule';
+import {
+  formatSlot,
+  getEffectiveDaySchedule,
+  getTargetShift,
+  getZonedDateKey,
+} from '@/lib/utils/schedule';
 import { ActiveOrderBanner } from '@/components/public/ActiveOrderBanner';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -25,7 +30,17 @@ export default async function MenuPage({
     getCategories(slug),
   ]);
 
-  const todaySchedule = getTodaySchedule(tenant.schedule.regular);
+  const target = getTargetShift(
+    tenant.schedule.regular,
+    tenant.schedule.exceptions,
+    tenant.minimumDeliveryTime,
+  );
+  const fallbackLabel = getEffectiveDaySchedule(
+    tenant.schedule.regular,
+    tenant.schedule.exceptions,
+    getZonedDateKey(),
+  ).slots.map(formatSlot).join(', ');
+  const scheduleLabel = target ? formatSlot(target) : fallbackLabel || null;
 
   return (
     <>
@@ -71,14 +86,7 @@ export default async function MenuPage({
               <p className="text-lg text-white/90 mb-6 max-w-md">{tenant.description}</p>
             )}
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
-              <StatusBadge
-                isOpen={tenant.isOpen}
-                scheduleLabel={
-                  todaySchedule
-                    ? `${todaySchedule.openingTime}–${todaySchedule.closingTime}`
-                    : null
-                }
-              />
+              <StatusBadge isOpen={tenant.isOpen} scheduleLabel={scheduleLabel} />
             </div>
             <a
               href={`/${slug}/info`}

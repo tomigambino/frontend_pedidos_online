@@ -4,7 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { type OrderResponseDto } from '@/lib/api/orders';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
-import { getTodaySchedule } from '@/lib/utils/schedule';
+import {
+  formatSlot,
+  getEffectiveDaySchedule,
+  getTargetShift,
+  getZonedDateKey,
+} from '@/lib/utils/schedule';
 import { clearActiveOrder, readActiveOrder } from '@/lib/utils/active-order';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -36,27 +41,6 @@ function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
 }
 
-const DAY_NAMES: Record<number, string> = {
-  1: 'Lun',
-  2: 'Mar',
-  3: 'Mié',
-  4: 'Jue',
-  5: 'Vie',
-  6: 'Sáb',
-  7: 'Dom',
-};
-
-function formatScheduleRange(
-  regular: { dayOfWeek: number; openingTime: string; closingTime: string }[],
-): string {
-  if (regular.length === 0) return '';
-  const sorted = [...regular].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-  const range = `${DAY_NAMES[first.dayOfWeek]} - ${DAY_NAMES[last.dayOfWeek]}`;
-  return `${range}: ${first.openingTime.slice(0, 5)} - ${first.closingTime.slice(0, 5)}`;
-}
-
 export function PedidoContent({
   slug,
   order: initialOrder,
@@ -74,10 +58,17 @@ export function PedidoContent({
   const currentStepIndex = STEPS.indexOf(status as typeof STEPS[number]);
   const trackingCode = initialOrder.trackingUuid.slice(0, 8).toUpperCase();
 
-  const todaySchedule = getTodaySchedule(tenant.schedule.regular);
-  const scheduleLabel = todaySchedule
-    ? `${todaySchedule.openingTime} - ${todaySchedule.closingTime}`
-    : formatScheduleRange(tenant.schedule.regular);
+  const target = getTargetShift(
+    tenant.schedule.regular,
+    tenant.schedule.exceptions,
+    tenant.minimumDeliveryTime,
+  );
+  const fallbackLabel = getEffectiveDaySchedule(
+    tenant.schedule.regular,
+    tenant.schedule.exceptions,
+    getZonedDateKey(),
+  ).slots.map(formatSlot).join(', ');
+  const scheduleLabel = target ? formatSlot(target) : fallbackLabel;
 
   useEffect(() => {
     if (isTerminal) return;
