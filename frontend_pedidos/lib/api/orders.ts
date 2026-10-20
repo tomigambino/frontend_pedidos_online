@@ -37,6 +37,7 @@ export interface CreateOrderDto {
   address?: string;
   notes?: string;
   deliveryNotes?: string;
+  desiredDeliveryTime?: string;
 }
 
 export interface OrderResponseDto {

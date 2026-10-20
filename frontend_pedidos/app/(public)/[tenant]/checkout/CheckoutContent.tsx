@@ -1,15 +1,52 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { createOrder, type PaymentMethod, type DeliveryType, type CreateOrderDto } from '@/lib/api/orders';
 import { writeActiveOrder } from '@/lib/utils/active-order';
+import {
+  APP_TIMEZONE,
+  formatSlot,
+  getTargetShift,
+} from '@/lib/utils/schedule';
+
+const TIME_STEP_MINUTES = 15;
+
+const timeFormatter = new Intl.DateTimeFormat('es-AR', {
+  timeZone: APP_TIMEZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
 
 function formatPrice(price: number): string {
   return `$${price.toLocaleString('es-AR')}`;
+}
+
+function formatTimeInAR(date: Date): string {
+  return timeFormatter.format(date);
+}
+
+function buildTimeOptions(
+  target: NonNullable<ReturnType<typeof getTargetShift>>,
+  minimumDeliveryTime: number,
+  now: Date,
+): Date[] {
+  const stepMs = TIME_STEP_MINUTES * 60_000;
+  const minMs = now.getTime() + minimumDeliveryTime * 60_000;
+  const startMs =
+    Math.ceil(Math.max(target.startDate.getTime(), minMs) / stepMs) * stepMs;
+  const endMs = target.maxOrderDate.getTime();
+  const options: Date[] = [];
+
+  for (let time = startMs; time <= endMs; time += stepMs) {
+    options.push(new Date(time));
+  }
+
+  return options;
 }
 
 export function CheckoutContent({
@@ -33,12 +70,33 @@ export function CheckoutContent({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{name?: string; phone?: string; address?: string; deliveryAgreed?: string}>({});
+  const [now, setNow] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState('');
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- el reloj se lee post-mount para evitar mismatch de hidratación
+    setNow(new Date());
+  }, []);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  const target =
+    now !== null
+      ? getTargetShift(
+          tenant.schedule.regular,
+          tenant.schedule.exceptions,
+          tenant.minimumDeliveryTime,
+          now,
+        )
+      : null;
+  const timeOptions =
+    now !== null && target !== null
+      ? buildTimeOptions(target, tenant.minimumDeliveryTime, now)
+      : [];
 
   const hasFixedDelivery = tenant.deliveryCostEnabled && tenant.deliveryCost != null;
   const deliveryCost = hasFixedDelivery ? tenant.deliveryCost! : 0;
@@ -134,6 +192,10 @@ export function CheckoutContent({
     if (deliveryType === 'ENVIO_DOMICILIO') {
       dto.address = address.trim();
       dto.customer.address = address.trim();
+    }
+
+    if (selectedTime) {
+      dto.desiredDeliveryTime = selectedTime;
     }
 
     setSubmitting(true);
@@ -316,6 +378,44 @@ export function CheckoutContent({
                 </div>
               )}
             </div>
+
+            {target && (
+              <div className="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] space-y-4">
+                <h2 className="text-[var(--color-foreground)] font-bold text-lg leading-tight">
+                  Horario del pedido
+                </h2>
+                {timeOptions.length > 0 ? (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-[var(--color-muted)]">
+                      ¿Para qué horario?
+                    </label>
+                    <select
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      disabled={submitting}
+                      className="w-full h-12 rounded-xl border border-gray-200 px-4 text-[var(--color-foreground)] text-base outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors bg-white disabled:opacity-60"
+                    >
+                      <option value="">Lo antes posible</option>
+                      {timeOptions.map((option) => {
+                        const value = option.toISOString();
+                        return (
+                          <option key={value} value={value}>
+                            {formatTimeInAR(option)}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <p className="text-xs text-[var(--color-muted)]">
+                      Turno actual: {formatSlot(target)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--color-muted)]">
+                    Ya no se pueden programar pedidos para este turno; tu pedido se prepara lo antes posible.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
