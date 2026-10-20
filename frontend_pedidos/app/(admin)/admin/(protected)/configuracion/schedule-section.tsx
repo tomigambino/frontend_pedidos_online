@@ -18,6 +18,10 @@ function trimTime(time: string): string {
   return time.slice(0, 5);
 }
 
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 function TimeInput({
   value,
   onCommit,
@@ -87,8 +91,8 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
       });
       setSlots((prev) => [...prev, created]);
       show('Franja horaria agregada');
-    } catch {
-      show('No se pudo agregar el horario', 'error');
+    } catch (err) {
+      show(errorMessage(err, 'No se pudo agregar el horario'), 'error');
     } finally {
       setConfirmDay(null);
     }
@@ -98,8 +102,8 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
     try {
       const updated = await updateScheduleSlot(slug, id, dto);
       setSlots((prev) => prev.map((s) => (s.id === id ? updated : s)));
-    } catch {
-      show('No se pudo actualizar el horario', 'error');
+    } catch (err) {
+      show(errorMessage(err, 'No se pudo actualizar el horario'), 'error');
     }
   }
 
@@ -107,8 +111,8 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
     try {
       await deleteScheduleSlot(slug, id);
       setSlots((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      show('No se pudo eliminar el horario', 'error');
+    } catch (err) {
+      show(errorMessage(err, 'No se pudo eliminar el horario'), 'error');
     }
   }
 
@@ -144,6 +148,10 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
           </div>
         </div>
       </div>
+
+      <p className="text-xs text-muted mb-4">
+        Si el cierre es menor que la apertura, el turno termina al día siguiente.
+      </p>
 
       {loading ? (
         <div className="text-muted py-8 text-center">Cargando horarios…</div>
@@ -187,6 +195,9 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
                           value={trimTime(slot.closingTime)}
                           onCommit={(v) => handleUpdateSlot(slot.id, { closingTime: v })}
                         />
+                        {slot.closesNextDay && (
+                          <span className="text-xs text-muted">(cierra al día siguiente)</span>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDeleteSlot(slot.id)}
@@ -208,7 +219,7 @@ export function ScheduleSection({ slug, isOpen, onToggleOpen }: ScheduleSectionP
       {confirmDay !== null && (
         <ConfirmModal
           title="Agregar franja horaria"
-          message={`¿Agregar una franja de 19:00 a 23:00 para los ${DIAS[confirmDay - 1]}? Podrás editarla después.`}
+          message={`¿Agregar una franja de 19:00 a 23:00 para los ${DIAS[confirmDay - 1]}? Podrás editarla después. Si el cierre es menor que la apertura, el turno termina al día siguiente.`}
           confirmLabel="Agregar"
           onConfirm={() => handleAddSlot(confirmDay)}
           onCancel={() => setConfirmDay(null)}

@@ -22,6 +22,10 @@ function formatDate(date: string): string {
   return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 interface ExceptionsSectionProps {
   slug: string;
 }
@@ -55,8 +59,8 @@ export function ExceptionsSection({ slug }: ExceptionsSectionProps) {
       show('Excepción agregada');
       setShowForm(false);
       loadExceptions();
-    } catch {
-      show('No se pudo agregar', 'error');
+    } catch (err) {
+      show(errorMessage(err, 'No se pudo agregar'), 'error');
     }
   }
 
@@ -66,8 +70,8 @@ export function ExceptionsSection({ slug }: ExceptionsSectionProps) {
       await deleteException(slug, confirmTarget.id);
       show('Excepción eliminada');
       loadExceptions();
-    } catch {
-      show('No se pudo eliminar', 'error');
+    } catch (err) {
+      show(errorMessage(err, 'No se pudo eliminar'), 'error');
     } finally {
       setConfirmTarget(null);
     }
@@ -121,7 +125,9 @@ export function ExceptionsSection({ slug }: ExceptionsSectionProps) {
                 <p className="text-xs text-muted mt-0.5">
                   {formatDate(ex.date)}
                   {ex.isOpen && ex.openingTime && ex.closingTime
-                    ? ` · ${ex.openingTime.slice(0, 5)} a ${ex.closingTime.slice(0, 5)}`
+                    ? ` · ${ex.openingTime.slice(0, 5)} a ${ex.closingTime.slice(0, 5)}${
+                        ex.closesNextDay ? ' (cierra al día siguiente)' : ''
+                      }`
                     : ''}
                 </p>
               </div>
@@ -238,6 +244,12 @@ function ExceptionForm({
               />
             </div>
           </div>
+        ) : null}
+
+        {isOpen ? (
+          <p className="text-xs text-muted">
+            Si el cierre es menor que la apertura, el turno termina al día siguiente.
+          </p>
         ) : null}
 
         <div className="flex flex-col gap-2">
