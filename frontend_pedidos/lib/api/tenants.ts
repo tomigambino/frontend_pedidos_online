@@ -5,6 +5,8 @@ export interface RegularScheduleDto {
   dayOfWeek: number;
   openingTime: string;
   closingTime: string;
+  maxOrderTime: string | null;
+  closesNextDay: boolean;
 }
 
 export interface ExceptionDto {
@@ -13,6 +15,8 @@ export interface ExceptionDto {
   isOpen: boolean;
   openingTime: string | null;
   closingTime: string | null;
+  maxOrderTime: string | null;
+  closesNextDay: boolean;
   reason: string | null;
 }
 
@@ -28,6 +32,7 @@ export interface TenantConfigResponseDto {
   isOpen: boolean;
   deliveryCostEnabled: boolean;
   deliveryCost: number | null;
+  minimumDeliveryTime: number;
   cbu: string | null;
   alias: string | null;
   accountHolder: string | null;
@@ -133,6 +138,7 @@ export interface CreateExceptionDto {
   isOpen: boolean;
   openingTime?: string | null;
   closingTime?: string | null;
+  maxOrderTime?: string | null;
   reason?: string | null;
 }
 
