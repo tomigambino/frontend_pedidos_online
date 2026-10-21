@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ExceptionDto, RegularScheduleDto } from '../api/tenants';
 import {
+  buildTimeOptions,
   buildWeekSchedule,
   formatSlot,
   getEffectiveDaySchedule,
@@ -224,6 +225,98 @@ describe('getTargetShift', () => {
     expect(target?.maxOrderDate).toEqual(
       new Date('2026-10-17T01:30:00-03:00'),
     );
+  });
+});
+
+describe('buildTimeOptions', () => {
+  it('viernes 22:00 con turno 20:00-02:00 y mínimo 30 termina en sábado 01:30', () => {
+    const now = new Date('2026-10-16T22:00:00-03:00');
+    const target = getTargetShift([fridayCrossingMidnight], [], 30, now);
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(options.at(-1)).toEqual(
+      new Date('2026-10-17T01:30:00-03:00'),
+    );
+  });
+
+  it('con maxOrderDate 01:40 la última opción es 01:30', () => {
+    const fridayUntil0140 = makeRegular({
+      dayOfWeek: 5,
+      openingTime: '20:00',
+      closingTime: '02:00',
+      maxOrderTime: '01:40',
+      closesNextDay: true,
+    });
+    const now = new Date('2026-10-16T22:00:00-03:00');
+    const target = getTargetShift([fridayUntil0140], [], 30, now);
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(options.at(-1)).toEqual(
+      new Date('2026-10-17T01:30:00-03:00'),
+    );
+    expect(options.at(-1)?.getTime()).toBeLessThan(
+      target.maxOrderDate.getTime(),
+    );
+  });
+
+  it('devuelve lista vacía cuando now + mínimo supera maxOrderDate', () => {
+    const now = new Date('2026-10-17T01:10:00-03:00');
+    const target = getTargetShift([fridayCrossingMidnight], [], 30, now);
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(options).toEqual([]);
+  });
+
+  it('incluye maxOrderDate cuando el borde cae exactamente en un múltiplo de 15', () => {
+    const now = new Date('2026-10-17T01:00:00-03:00');
+    const target = getTargetShift([fridayCrossingMidnight], [], 30, now);
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(options).toEqual([target.maxOrderDate]);
+  });
+
+  it('viernes 22:07 con mínimo 30 arranca en 22:45', () => {
+    const now = new Date('2026-10-16T22:07:00-03:00');
+    const target = getTargetShift([fridayCrossingMidnight], [], 30, now);
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(options[0]).toEqual(new Date('2026-10-16T22:45:00-03:00'));
+  });
+
+  it('entre turnos arranca en el startDate del turno siguiente', () => {
+    const mondayLunch = makeRegular({
+      dayOfWeek: 1,
+      openingTime: '12:00',
+      closingTime: '15:00',
+    });
+    const mondayDinner = makeRegular({
+      dayOfWeek: 1,
+      openingTime: '20:00',
+      closingTime: '23:30',
+    });
+    const now = new Date('2026-10-19T16:00:00-03:00');
+    const target = getTargetShift(
+      [mondayLunch, mondayDinner],
+      [],
+      30,
+      now,
+    );
+    if (!target) throw new Error('Se esperaba un turno objetivo');
+
+    const options = buildTimeOptions(target, 30, now);
+
+    expect(target.openingTime).toBe('20:00');
+    expect(options[0]).toEqual(target.startDate);
   });
 });
 
