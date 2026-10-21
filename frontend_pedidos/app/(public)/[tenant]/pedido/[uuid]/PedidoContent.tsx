@@ -52,22 +52,33 @@ export function PedidoContent({
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialOrder.status);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- el reloj se lee post-mount para evitar mismatch de hidratación
+    setNow(new Date());
+  }, []);
 
   const isTerminalNegative = TERMINAL_NEGATIVE.includes(status);
   const isTerminal = status === 'ENTREGADO' || isTerminalNegative;
   const currentStepIndex = STEPS.indexOf(status as typeof STEPS[number]);
   const trackingCode = initialOrder.trackingUuid.slice(0, 8).toUpperCase();
 
-  const target = getTargetShift(
-    tenant.schedule.regular,
-    tenant.schedule.exceptions,
-    tenant.minimumDeliveryTime,
-  );
-  const fallbackLabel = getEffectiveDaySchedule(
-    tenant.schedule.regular,
-    tenant.schedule.exceptions,
-    getZonedDateKey(),
-  ).slots.map(formatSlot).join(', ');
+  const target = now
+    ? getTargetShift(
+        tenant.schedule.regular,
+        tenant.schedule.exceptions,
+        tenant.minimumDeliveryTime,
+        now,
+      )
+    : null;
+  const fallbackLabel = now
+    ? getEffectiveDaySchedule(
+        tenant.schedule.regular,
+        tenant.schedule.exceptions,
+        getZonedDateKey(now),
+      ).slots.map(formatSlot).join(', ')
+    : '';
   const scheduleLabel = target ? formatSlot(target) : fallbackLabel;
 
   useEffect(() => {

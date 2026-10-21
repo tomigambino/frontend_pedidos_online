@@ -63,6 +63,7 @@ export interface UpdateTenantDto {
   isOpen?: boolean;
   deliveryCostEnabled?: boolean;
   deliveryCost?: number | null;
+  minimumDeliveryTime?: number;
 }
 
 const EXCLUDED_KEYS = new Set(['logo', 'banner']);

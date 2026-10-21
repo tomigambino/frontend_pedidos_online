@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/context/CartContext';
@@ -9,11 +9,9 @@ import { createOrder, type PaymentMethod, type DeliveryType, type CreateOrderDto
 import { writeActiveOrder } from '@/lib/utils/active-order';
 import {
   APP_TIMEZONE,
-  formatSlot,
+  buildTimeOptions,
   getTargetShift,
 } from '@/lib/utils/schedule';
-
-const TIME_STEP_MINUTES = 15;
 
 const timeFormatter = new Intl.DateTimeFormat('es-AR', {
   timeZone: APP_TIMEZONE,
@@ -28,25 +26,6 @@ function formatPrice(price: number): string {
 
 function formatTimeInAR(date: Date): string {
   return timeFormatter.format(date);
-}
-
-function buildTimeOptions(
-  target: NonNullable<ReturnType<typeof getTargetShift>>,
-  minimumDeliveryTime: number,
-  now: Date,
-): Date[] {
-  const stepMs = TIME_STEP_MINUTES * 60_000;
-  const minMs = now.getTime() + minimumDeliveryTime * 60_000;
-  const startMs =
-    Math.ceil(Math.max(target.startDate.getTime(), minMs) / stepMs) * stepMs;
-  const endMs = target.maxOrderDate.getTime();
-  const options: Date[] = [];
-
-  for (let time = startMs; time <= endMs; time += stepMs) {
-    options.push(new Date(time));
-  }
-
-  return options;
 }
 
 export function CheckoutContent({
@@ -72,10 +51,13 @@ export function CheckoutContent({
   const [fieldErrors, setFieldErrors] = useState<{name?: string; phone?: string; address?: string; deliveryAgreed?: string}>({});
   const [now, setNow] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- el reloj se lee post-mount para evitar mismatch de hidratación
     setNow(new Date());
+    const interval = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const nameRef = useRef<HTMLInputElement>(null);
@@ -93,10 +75,33 @@ export function CheckoutContent({
           now,
         )
       : null;
-  const timeOptions =
-    now !== null && target !== null
-      ? buildTimeOptions(target, tenant.minimumDeliveryTime, now)
-      : [];
+  const timeOptions = useMemo(
+    () =>
+      now !== null && target !== null
+        ? buildTimeOptions(target, tenant.minimumDeliveryTime, now)
+        : [],
+    [target, tenant.minimumDeliveryTime, now],
+  );
+
+  const isUpcomingShift =
+    target !== null && now !== null && target.startDate > now;
+  const targetLabel = target
+    ? `${isUpcomingShift ? 'Próximo turno' : 'Horario del turno'}: ${target.openingTime.slice(0, 5)} a ${target.closingTime.slice(0, 5)}${
+        target.closesNextDay ? ' (cierra al día siguiente)' : ''
+      }`
+    : '';
+
+  useEffect(() => {
+    if (!selectedTime) return;
+    const stillValid = timeOptions.some(
+      (option) => option.toISOString() === selectedTime,
+    );
+    if (!stillValid) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- limpiar una selección que dejó de ser válida
+      setSelectedTime('');
+      setShowTimeWarning(true);
+    }
+  }, [selectedTime, timeOptions]);
 
   const hasFixedDelivery = tenant.deliveryCostEnabled && tenant.deliveryCost != null;
   const deliveryCost = hasFixedDelivery ? tenant.deliveryCost! : 0;
@@ -391,7 +396,10 @@ export function CheckoutContent({
                     </label>
                     <select
                       value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedTime(e.target.value);
+                        setShowTimeWarning(false);
+                      }}
                       disabled={submitting}
                       className="w-full h-12 rounded-xl border border-gray-200 px-4 text-[var(--color-foreground)] text-base outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors bg-white disabled:opacity-60"
                     >
@@ -405,8 +413,13 @@ export function CheckoutContent({
                         );
                       })}
                     </select>
+                    {showTimeWarning && (
+                      <p className="text-xs text-red-600 font-medium">
+                        El horario que elegiste ya no está disponible; elegí otro o dejalo en “Lo antes posible”.
+                      </p>
+                    )}
                     <p className="text-xs text-[var(--color-muted)]">
-                      Turno actual: {formatSlot(target)}
+                      {targetLabel}
                     </p>
                   </div>
                 ) : (

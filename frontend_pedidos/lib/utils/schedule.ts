@@ -280,6 +280,29 @@ export function getTargetShift(
   };
 }
 
+const TIME_STEP_MINUTES = 15;
+
+// El alineado por epoch asume un offset horario entero (AR = -03:00), por lo que
+// los múltiplos de 15 minutos coinciden con :00/:15/:30/:45 en hora local.
+export function buildTimeOptions(
+  target: NonNullable<ReturnType<typeof getTargetShift>>,
+  minimumDeliveryTime: number,
+  now: Date,
+): Date[] {
+  const stepMs = TIME_STEP_MINUTES * 60_000;
+  const minMs = now.getTime() + minimumDeliveryTime * 60_000;
+  const startMs =
+    Math.ceil(Math.max(target.startDate.getTime(), minMs) / stepMs) * stepMs;
+  const endMs = target.maxOrderDate.getTime();
+  const options: Date[] = [];
+
+  for (let time = startMs; time <= endMs; time += stepMs) {
+    options.push(new Date(time));
+  }
+
+  return options;
+}
+
 export function buildWeekSchedule(
   regular: RegularScheduleDto[],
   exceptions: ExceptionDto[],

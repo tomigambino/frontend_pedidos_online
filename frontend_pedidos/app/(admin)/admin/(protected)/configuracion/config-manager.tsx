@@ -43,6 +43,7 @@ const FORM_KEYS: (keyof UpdateTenantDto)[] = [
   'isOpen',
   'deliveryCostEnabled',
   'deliveryCost',
+  'minimumDeliveryTime',
 ];
 
 const BANK_FIELDS = ['cbu', 'alias', 'accountHolder', 'bank'] as const;
@@ -53,7 +54,7 @@ const SECTION_FIELDS: Record<SectionKey, (keyof UpdateTenantDto)[]> = {
   general: ['name', 'whatsapp', 'description', 'address'],
   appearance: ['logo', 'banner', 'primaryColor', 'secondaryColor'],
   banking: ['bank', 'cbu', 'alias', 'accountHolder'],
-  delivery: ['deliveryCostEnabled', 'deliveryCost'],
+  delivery: ['deliveryCostEnabled', 'deliveryCost', 'minimumDeliveryTime'],
 };
 
 const SECTIONS = [
@@ -860,6 +861,31 @@ function Delivery({
             />
           </div>
         )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-6 p-4 rounded-xl bg-black/5 mt-4">
+        <div>
+          <p className="font-semibold text-foreground">Tiempo mínimo de preparación</p>
+          <p className="text-xs text-muted">
+            Minutos mínimos de anticipación para pedidos programados (aplica a retiro en local y a envío a domicilio).
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-1 max-w-xs">
+          <input
+            className={inputClass}
+            type="number"
+            min="0"
+            max="720"
+            step="1"
+            value={form.minimumDeliveryTime ?? 0}
+            disabled={!editing}
+            onChange={(e) => {
+              const value = e.target.value;
+              const parsed = value === '' ? 0 : Math.trunc(Number(value));
+              updateField('minimumDeliveryTime', Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
+            }}
+          />
+          <span className="text-sm text-muted">min</span>
+        </div>
       </div>
       {editing && <SectionActions onCancel={onCancel} onConfirm={onConfirm} saving={saving} />}
     </section>

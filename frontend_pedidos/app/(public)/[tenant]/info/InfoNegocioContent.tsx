@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { type TenantConfigResponseDto } from '@/lib/api/tenants';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
@@ -17,14 +18,25 @@ export function InfoNegocioContent({
   slug: string;
   tenant: TenantConfigResponseDto;
 }) {
-  const weekSchedule = buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions);
-  const todaySchedule = getEffectiveDaySchedule(
-    tenant.schedule.regular,
-    tenant.schedule.exceptions,
-    getZonedDateKey(),
-  );
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- el reloj se lee post-mount para evitar mismatch de hidratación
+    setNow(new Date());
+  }, []);
+
+  const weekSchedule = now
+    ? buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions)
+    : [];
+  const todaySchedule = now
+    ? getEffectiveDaySchedule(
+        tenant.schedule.regular,
+        tenant.schedule.exceptions,
+        getZonedDateKey(now),
+      )
+    : { isOpen: false, slots: [] };
   const scheduleLabel =
-    todaySchedule.isOpen && todaySchedule.slots.length > 0
+    now && todaySchedule.isOpen && todaySchedule.slots.length > 0
       ? todaySchedule.slots.map(formatSlot).join(', ')
       : null;
 
@@ -131,8 +143,9 @@ export function InfoNegocioContent({
           </div>
         </div>
 
-        <section className="bg-gray-50 p-6 md:p-10 rounded-[2.5rem] border border-white">
-          <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+        {now && (
+          <section className="bg-gray-50 p-6 md:p-10 rounded-[2.5rem] border border-white">
+            <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
             <div className="flex items-center gap-4">
               <div className="bg-[var(--color-primary)] w-12 h-12 rounded-2xl flex items-center justify-center text-white">
                 <span className="material-symbols-outlined">schedule</span>
@@ -181,8 +194,9 @@ export function InfoNegocioContent({
                 </span>
               </div>
             ))}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

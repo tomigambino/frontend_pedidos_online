@@ -12,7 +12,9 @@ export function InfoNegocioModal({
   trigger?: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const weekSchedule = buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions);
+  const weekSchedule = isOpen
+    ? buildWeekSchedule(tenant.schedule.regular, tenant.schedule.exceptions)
+    : [];
   const hasAnyOpenDay = weekSchedule.some((d) => d.isOpen);
 
   return (
